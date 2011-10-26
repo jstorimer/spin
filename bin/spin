@@ -48,8 +48,8 @@ def serve
     file = conn.gets.chomp
 
     fork do
-      puts "Loading #{file}"
       puts
+      puts "Loading #{file}"
       require file
     end
 
@@ -61,7 +61,8 @@ def listen
   socket = UNIXSocket.open(socket_file)
   files_to_load = ARGV
 
-  files_to_load.each do |f|
+  files_to_load.select { |f| File.exist?(f) }.each do |f|
+    puts "Spinning up #{f}"
     socket.puts f
   end
 rescue Errno::ECONNREFUSED
