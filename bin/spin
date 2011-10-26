@@ -1,0 +1,70 @@
+#!/usr/bin/env ruby
+
+require 'socket'
+# This brings in `Dir.tmpdir`
+require 'tempfile'
+# This lets us hash the parameters we want to include in the filename
+# without having to worry about subdirectories, special chars, etc.
+require 'digest/md5'
+
+def usage(stream = $stderr)
+  stream.puts <<-USAGE
+Usage: spin serve
+       spin listen <file>...
+Load Rails less often during your autotest(ish) workflow.
+  USAGE
+
+  exit 1
+end
+
+def socket_file
+  key = Digest::MD5.hexdigest [Dir.pwd, 'spin-gem'].join
+  file = [Dir.tmpdir, key].join('-')
+end
+
+def serve
+  file = socket_file
+  File.delete(file) if File.exist?(file)
+
+  socket = UNIXServer.open(file)
+
+  ENV['RAILS_ENV'] = 'test' unless ENV['RAILS_ENV']
+
+  if File.exist? 'config/application.rb'
+    require File.expand_path 'config/application'
+    puts 'Loaded Rails env...'
+  else
+    warn "Could not find config/application.rb. Are you running this from the root of a Rails project?"
+  end
+
+  loop do
+    conn = socket.accept
+    file = conn.gets.chomp
+
+    fork do
+      puts "Loading #{file}"
+      puts
+      require file
+    end
+
+    Process.wait
+  end
+end
+
+def listen
+  socket = UNIXSocket.open(socket_file)
+  files_to_load = ARGV
+
+  files_to_load.each do |f|
+    socket.puts f
+  end
+rescue Errno::ECONNREFUSED
+  abort "Connection was refused. Have you started up `spin serve` yet?"
+end
+
+subcommand = ARGV.shift
+case subcommand
+when 'serve' then serve
+when 'listen' then listen
+else usage
+end
