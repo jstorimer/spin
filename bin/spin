@@ -6,6 +6,9 @@ require 'tempfile'
 # This lets us hash the parameters we want to include in the filename
 # without having to worry about subdirectories, special chars, etc.
 require 'digest/md5'
+# So we can tell users how much time they're saving by preloading their
+# environment.
+require 'benchmark'
 
 def usage(stream = $stderr)
   stream.puts <<-USAGE
@@ -31,8 +34,11 @@ def serve
   ENV['RAILS_ENV'] = 'test' unless ENV['RAILS_ENV']
 
   if File.exist? 'config/application.rb'
-    require File.expand_path 'config/application'
-    puts 'Loaded Rails env...'
+    sec = Benchmark.realtime {
+      require File.expand_path 'config/application'
+    }
+
+    puts "Preloaded Rails env in #{sec}s..."
   else
     warn "Could not find config/application.rb. Are you running this from the root of a Rails project?"
   end
