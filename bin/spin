@@ -13,7 +13,7 @@ require 'benchmark'
 def usage(stream = $stderr)
   stream.puts <<-USAGE
 Usage: spin serve
-       spin listen <file>...
+       spin push <file>...
 Load Rails less often during your autotest(ish) workflow.
   USAGE
 
@@ -22,13 +22,12 @@ end
 
 def socket_file
   key = Digest::MD5.hexdigest [Dir.pwd, 'spin-gem'].join
-  file = [Dir.tmpdir, key].join('-')
+  [Dir.tmpdir, key].join('-')
 end
 
 def serve
   file = socket_file
   File.delete(file) if File.exist?(file)
-
   socket = UNIXServer.open(file)
 
   ENV['RAILS_ENV'] = 'test' unless ENV['RAILS_ENV']
@@ -37,7 +36,6 @@ def serve
     sec = Benchmark.realtime {
       require File.expand_path 'config/application'
     }
-
     puts "Preloaded Rails env in #{sec}s..."
   else
     warn "Could not find config/application.rb. Are you running this from the root of a Rails project?"
@@ -57,7 +55,7 @@ def serve
   end
 end
 
-def listen
+def push
   socket = UNIXSocket.open(socket_file)
   files_to_load = ARGV
 
@@ -72,6 +70,6 @@ end
 subcommand = ARGV.shift
 case subcommand
 when 'serve' then serve
-when 'listen' then listen
+when 'push' then push
 else usage
 end
