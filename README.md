@@ -81,8 +81,12 @@ There's another project ([spork](http://github.com/timcharper/spork)) that aims 
 How it Works
 ============
 
+Annotated source with [Rocco](http://rtomayko.github.com/rocco/)
+
 [spin](http://jstorimer.github.com/spin/)
+
 [spin serve](http://jstorimer.github.com/spin/#section-spin_serve)
+
 [spin push](http://jstorimer.github.com/spin/#section-spin_push)
 
 Hacking
