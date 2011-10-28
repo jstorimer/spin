@@ -229,20 +229,72 @@ needs to, then it exits and we&rsquo;re back to the baseline preloaded app.</p>
 time because then we&rsquo;d need to deal with multiple test databases, and
 that destroys the idea of being simple to use. So we wait(2) until the
 child process has finished running the test.</p>
-
       </td>
       <td class=code>
         <div class='highlight'><pre>    <span class="no">Process</span><span class="o">.</span><span class="n">wait</span>
   <span class="k">end</span>
-<span class="k">end</span>
+<span class="k">end</span></pre></div>
+      </td>
+    </tr>
+    <tr id='section-spin_push'>
+      <td class=docs>
+        <div class="pilwrap">
+          <a class="pilcrow" href="#section-spin_push">&#182;</a>
+        </div>
+        <h2>spin push</h2>
+      </td>
+      <td class=code>
+        <div class='highlight'><pre><span class="k">def</span> <span class="nf">push</span></pre></div>
+      </td>
+    </tr>
+    <tr id='section-17'>
+      <td class=docs>
+        <div class="pilwrap">
+          <a class="pilcrow" href="#section-17">&#182;</a>
+        </div>
+        <p>This is the other end of the socket that <code>spin serve</code> opens. At this point
+<code>spin serve</code> will accept(2) our connection.</p>
+      </td>
+      <td class=code>
+        <div class='highlight'><pre>  <span class="n">socket</span> <span class="o">=</span> <span class="no">UNIXSocket</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">socket_file</span><span class="p">)</span></pre></div>
+      </td>
+    </tr>
+    <tr id='section-18'>
+      <td class=docs>
+        <div class="pilwrap">
+          <a class="pilcrow" href="#section-18">&#182;</a>
+        </div>
+        <p>The filenames that we will spin up to <code>spin serve</code> are passed in as 
+arguments.</p>
+      </td>
+      <td class=code>
+        <div class='highlight'><pre>  <span class="n">files_to_load</span> <span class="o">=</span> <span class="no">ARGV</span></pre></div>
+      </td>
+    </tr>
+    <tr id='section-19'>
+      <td class=docs>
+        <div class="pilwrap">
+          <a class="pilcrow" href="#section-19">&#182;</a>
+        </div>
+        <p>We reject anything in ARGV that isn&rsquo;t a file that exists. This takes
+care of scripts that specify files like <code>spin push -r file.rb</code>. The <code>-r</code>
+bit will just be ignored.</p>
+      </td>
+      <td class=code>
+        <div class='highlight'><pre>  <span class="n">files_to_load</span><span class="o">.</span><span class="n">select</span> <span class="p">{</span> <span class="o">|</span><span class="n">f</span><span class="o">|</span> <span class="no">File</span><span class="o">.</span><span class="n">exist?</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="p">}</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">f</span><span class="o">|</span>
+    <span class="nb">puts</span> <span class="s2">&quot;Spinning up </span><span class="si">#{</span><span class="n">f</span><span class="si">}</span><span class="s2">&quot;</span></pre></div>
+      </td>
+    </tr>
+    <tr id='section-20'>
+      <td class=docs>
+        <div class="pilwrap">
+          <a class="pilcrow" href="#section-20">&#182;</a>
+        </div>
+        <p>We put the filename on the socket for the server to read and then load.</p>
 
-<span class="k">def</span> <span class="nf">push</span>
-  <span class="n">socket</span> <span class="o">=</span> <span class="no">UNIXSocket</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">socket_file</span><span class="p">)</span>
-  <span class="n">files_to_load</span> <span class="o">=</span> <span class="no">ARGV</span>
-
-  <span class="n">files_to_load</span><span class="o">.</span><span class="n">select</span> <span class="p">{</span> <span class="o">|</span><span class="n">f</span><span class="o">|</span> <span class="no">File</span><span class="o">.</span><span class="n">exist?</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="p">}</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">f</span><span class="o">|</span>
-    <span class="nb">puts</span> <span class="s2">&quot;Spinning up </span><span class="si">#{</span><span class="n">f</span><span class="si">}</span><span class="s2">&quot;</span>
-    <span class="n">socket</span><span class="o">.</span><span class="n">puts</span> <span class="n">f</span>
+      </td>
+      <td class=code>
+        <div class='highlight'><pre>    <span class="n">socket</span><span class="o">.</span><span class="n">puts</span> <span class="n">f</span>
   <span class="k">end</span>
 <span class="k">rescue</span> <span class="no">Errno</span><span class="o">::</span><span class="no">ECONNREFUSED</span>
   <span class="nb">abort</span> <span class="s2">&quot;Connection was refused. Have you started up `spin serve` yet?&quot;</span>
