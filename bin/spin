@@ -91,12 +91,21 @@ def serve
   end
 end
 
+# ## spin push
 def push
+  # This is the other end of the socket that `spin serve` opens. At this point
+  # `spin serve` will accept(2) our connection.
   socket = UNIXSocket.open(socket_file)
+  # The filenames that we will spin up to `spin serve` are passed in as 
+  # arguments.
   files_to_load = ARGV
 
+  # We reject anything in ARGV that isn't a file that exists. This takes
+  # care of scripts that specify files like `spin push -r file.rb`. The `-r`
+  # bit will just be ignored.
   files_to_load.select { |f| File.exist?(f) }.each do |f|
     puts "Spinning up #{f}"
+    # We put the filename on the socket for the server to read and then load.
     socket.puts f
   end
 rescue Errno::ECONNREFUSED
