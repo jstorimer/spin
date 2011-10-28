@@ -77,10 +77,9 @@ There's another project ([spork](http://github.com/timcharper/spork)) that aims 
 How it Works
 ============
 
-### spin serve
+[spin serve](http://jstorimer.github.com/spin/#section-spin_serve)
 
-Opens a Unix Socket
-
+[spin push](http://jstorimer.github.com/spin/#section-spin_push)
 
 Hacking
 =======
