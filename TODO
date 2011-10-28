@@ -1,0 +1,11 @@
+[ ] Allow users to load whatever they want (besides just config/application.rb)
+    Maybe in a local .spin file?
+
+[ ] Since we already have the environment preloaded, why couldn't we use that to fork off a rails console? 
+    or rails server? `spin console`
+
+[ ] Test this with different testing frameworks. rspec? minitest?
+
+[ ] Test with different app frameworks. config/application is obviously rails-specific. This depends on item #1.
+
+[ ] Test with different tools. Can it work with watchr? autotest?
