@@ -1,1 +1,261 @@
-My GitHub Page
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>spin</title>
+  <link rel="stylesheet" href="http://jashkenas.github.com/docco/resources/docco.css">
+</head>
+<body>
+<div id='container'>
+  <div id="background"></div>
+  <table cellspacing=0 cellpadding=0>
+  <thead>
+    <tr>
+      <th class=docs><h1>spin</h1></th>
+      <th class=code></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr id='section-1'>
+      <td class=docs>
+        <div class="pilwrap">
+          <a class="pilcrow" href="#section-1">&#182;</a>
+        </div>
+        <p>Spin will speed up your autotest(ish) workflow for Rails.</p>
+      </td>
+      <td class=code>
+        <div class='highlight'><pre></pre></div>
+      </td>
+    </tr>
+    <tr id='section-2'>
+      <td class=docs>
+        <div class="pilwrap">
+          <a class="pilcrow" href="#section-2">&#182;</a>
+        </div>
+        <p>Spin preloads your Rails environment for testing, so you don&rsquo;t load the same code over and over and over&hellip; Spin works best with an autotest(ish) workflow.</p>
+      </td>
+      <td class=code>
+        <div class='highlight'><pre><span class="nb">require</span> <span class="s1">&#39;socket&#39;</span></pre></div>
+      </td>
+    </tr>
+    <tr id='section-3'>
+      <td class=docs>
+        <div class="pilwrap">
+          <a class="pilcrow" href="#section-3">&#182;</a>
+        </div>
+        <p>This brings in <code>Dir.tmpdir</code></p>
+      </td>
+      <td class=code>
+        <div class='highlight'><pre><span class="nb">require</span> <span class="s1">&#39;tempfile&#39;</span></pre></div>
+      </td>
+    </tr>
+    <tr id='section-4'>
+      <td class=docs>
+        <div class="pilwrap">
+          <a class="pilcrow" href="#section-4">&#182;</a>
+        </div>
+        <p>This lets us hash the parameters we want to include in the filename
+without having to worry about subdirectories, special chars, etc.</p>
+      </td>
+      <td class=code>
+        <div class='highlight'><pre><span class="nb">require</span> <span class="s1">&#39;digest/md5&#39;</span></pre></div>
+      </td>
+    </tr>
+    <tr id='section-5'>
+      <td class=docs>
+        <div class="pilwrap">
+          <a class="pilcrow" href="#section-5">&#182;</a>
+        </div>
+        <p>So we can tell users how much time they&rsquo;re saving by preloading their
+environment.</p>
+      </td>
+      <td class=code>
+        <div class='highlight'><pre><span class="nb">require</span> <span class="s1">&#39;benchmark&#39;</span>
+
+<span class="k">def</span> <span class="nf">usage</span><span class="p">(</span><span class="n">stream</span> <span class="o">=</span> <span class="vg">$stderr</span><span class="p">)</span>
+  <span class="n">stream</span><span class="o">.</span><span class="n">puts</span> <span class="o">&lt;&lt;-</span><span class="no">USAGE</span>
+<span class="sh">Usage: spin serve</span>
+<span class="sh">       spin push &lt;file&gt;...</span>
+<span class="sh">Spin preloads your Rails environment to speed up your autotest(ish) workflow.</span>
+<span class="no">  USAGE</span>
+
+  <span class="nb">exit</span> <span class="mi">1</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">socket_file</span>
+  <span class="n">key</span> <span class="o">=</span> <span class="no">Digest</span><span class="o">::</span><span class="no">MD5</span><span class="o">.</span><span class="n">hexdigest</span> <span class="o">[</span><span class="no">Dir</span><span class="o">.</span><span class="n">pwd</span><span class="p">,</span> <span class="s1">&#39;spin-gem&#39;</span><span class="o">].</span><span class="n">join</span>
+  <span class="o">[</span><span class="no">Dir</span><span class="o">.</span><span class="n">tmpdir</span><span class="p">,</span> <span class="n">key</span><span class="o">].</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">require_relative?</span>
+  <span class="vi">@require_relative</span> <span class="o">||=</span> <span class="nb">respond_to?</span><span class="p">(</span><span class="ss">:require_relative</span><span class="p">)</span>
+<span class="k">end</span></pre></div>
+      </td>
+    </tr>
+    <tr id='section-spin_serve'>
+      <td class=docs>
+        <div class="pilwrap">
+          <a class="pilcrow" href="#section-spin_serve">&#182;</a>
+        </div>
+        <h2>spin serve</h2>
+      </td>
+      <td class=code>
+        <div class='highlight'><pre><span class="k">def</span> <span class="nf">serve</span>
+  <span class="n">file</span> <span class="o">=</span> <span class="n">socket_file</span></pre></div>
+      </td>
+    </tr>
+    <tr id='section-7'>
+      <td class=docs>
+        <div class="pilwrap">
+          <a class="pilcrow" href="#section-7">&#182;</a>
+        </div>
+        <p>We delete the tmp file for the Unix socket if it already exists. The file
+is scoped to the <code>pwd</code>, so if it already exists then it must be from an
+old run of <code>spin serve</code> and can be cleaned up.</p>
+      </td>
+      <td class=code>
+        <div class='highlight'><pre>  <span class="no">File</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">file</span><span class="p">)</span> <span class="k">if</span> <span class="no">File</span><span class="o">.</span><span class="n">exist?</span><span class="p">(</span><span class="n">file</span><span class="p">)</span></pre></div>
+      </td>
+    </tr>
+    <tr id='section-8'>
+      <td class=docs>
+        <div class="pilwrap">
+          <a class="pilcrow" href="#section-8">&#182;</a>
+        </div>
+        <p>This socket is how we communicate with <code>spin push</code>.</p>
+      </td>
+      <td class=code>
+        <div class='highlight'><pre>  <span class="n">socket</span> <span class="o">=</span> <span class="no">UNIXServer</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+
+  <span class="no">ENV</span><span class="o">[</span><span class="s1">&#39;RAILS_ENV&#39;</span><span class="o">]</span> <span class="o">=</span> <span class="s1">&#39;test&#39;</span> <span class="k">unless</span> <span class="no">ENV</span><span class="o">[</span><span class="s1">&#39;RAILS_ENV&#39;</span><span class="o">]</span>
+
+  <span class="k">if</span> <span class="no">File</span><span class="o">.</span><span class="n">exist?</span> <span class="s1">&#39;config/application.rb&#39;</span>
+    <span class="n">sec</span> <span class="o">=</span> <span class="no">Benchmark</span><span class="o">.</span><span class="n">realtime</span> <span class="p">{</span></pre></div>
+      </td>
+    </tr>
+    <tr id='section-9'>
+      <td class=docs>
+        <div class="pilwrap">
+          <a class="pilcrow" href="#section-9">&#182;</a>
+        </div>
+        <p>We require config/application because that file (typically) loads Rails
+and any Bundler deps, as well as loading the initialization code for
+the app, but it doesn&rsquo;t actually perform the initialization. That happens
+in config/environment.</p>
+
+<p>In my experience that&rsquo;s the best we can do in terms of preloading. Rails
+and the gem dependencies rarely change and so don&rsquo;t need to be reloaded.
+But you can&rsquo;t initialize the application because any non-trivial app will
+involve it&rsquo;s models/controllers, etc. in its initialization, which you 
+definitely don&rsquo;t want to preload.</p>
+      </td>
+      <td class=code>
+        <div class='highlight'><pre>      <span class="nb">require</span> <span class="no">File</span><span class="o">.</span><span class="n">expand_path</span> <span class="s1">&#39;config/application&#39;</span>
+    <span class="p">}</span></pre></div>
+      </td>
+    </tr>
+    <tr id='section-10'>
+      <td class=docs>
+        <div class="pilwrap">
+          <a class="pilcrow" href="#section-10">&#182;</a>
+        </div>
+        <p>This is the amount of time that you&rsquo;ll save on each subsequent test run.</p>
+      </td>
+      <td class=code>
+        <div class='highlight'><pre>    <span class="nb">puts</span> <span class="s2">&quot;Preloaded Rails env in </span><span class="si">#{</span><span class="n">sec</span><span class="si">}</span><span class="s2">s...&quot;</span>
+  <span class="k">else</span>
+    <span class="nb">warn</span> <span class="s2">&quot;Could not find config/application.rb. Are you running this from the root of a Rails project?&quot;</span>
+  <span class="k">end</span>
+
+  <span class="kp">loop</span> <span class="k">do</span></pre></div>
+      </td>
+    </tr>
+    <tr id='section-11'>
+      <td class=docs>
+        <div class="pilwrap">
+          <a class="pilcrow" href="#section-11">&#182;</a>
+        </div>
+        <p>Since <code>spin push</code> reconnects each time it has a new file for us we just
+need to accept(2) connections from it.</p>
+      </td>
+      <td class=code>
+        <div class='highlight'><pre>    <span class="n">conn</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">accept</span></pre></div>
+      </td>
+    </tr>
+    <tr id='section-12'>
+      <td class=docs>
+        <div class="pilwrap">
+          <a class="pilcrow" href="#section-12">&#182;</a>
+        </div>
+        <p>This should be a relative path to a file.</p>
+      </td>
+      <td class=code>
+        <div class='highlight'><pre>    <span class="n">file</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">gets</span><span class="o">.</span><span class="n">chomp</span></pre></div>
+      </td>
+    </tr>
+    <tr id='section-13'>
+      <td class=docs>
+        <div class="pilwrap">
+          <a class="pilcrow" href="#section-13">&#182;</a>
+        </div>
+        <p>We fork(2) before loading the file so that our pristine preloaded
+environment is untouched. The child process will load whatever code it
+needs to, then it exits and we&rsquo;re back to the baseline preloaded app.</p>
+      </td>
+      <td class=code>
+        <div class='highlight'><pre>    <span class="nb">fork</span> <span class="k">do</span>
+      <span class="nb">puts</span>
+      <span class="nb">puts</span> <span class="s2">&quot;Loading </span><span class="si">#{</span><span class="n">file</span><span class="si">}</span><span class="s2">&quot;</span></pre></div>
+      </td>
+    </tr>
+    <tr id='section-14'>
+      <td class=docs>
+        <div class="pilwrap">
+          <a class="pilcrow" href="#section-14">&#182;</a>
+        </div>
+        <p>We require the full path of the file here in the child process.</p>
+      </td>
+      <td class=code>
+        <div class='highlight'><pre>      <span class="nb">require</span> <span class="no">File</span><span class="o">.</span><span class="n">expand_path</span> <span class="n">file</span>
+    <span class="k">end</span></pre></div>
+      </td>
+    </tr>
+    <tr id='section-15'>
+      <td class=docs>
+        <div class="pilwrap">
+          <a class="pilcrow" href="#section-15">&#182;</a>
+        </div>
+        <p>We don&rsquo;t want the parent process handling multiple test runs at the same
+time because then we&rsquo;d need to deal with multiple test databases, and
+that destroys the idea of being simple to use. So we wait(2) until the
+child process has finished running the test.</p>
+
+      </td>
+      <td class=code>
+        <div class='highlight'><pre>    <span class="no">Process</span><span class="o">.</span><span class="n">wait</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">push</span>
+  <span class="n">socket</span> <span class="o">=</span> <span class="no">UNIXSocket</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">socket_file</span><span class="p">)</span>
+  <span class="n">files_to_load</span> <span class="o">=</span> <span class="no">ARGV</span>
+
+  <span class="n">files_to_load</span><span class="o">.</span><span class="n">select</span> <span class="p">{</span> <span class="o">|</span><span class="n">f</span><span class="o">|</span> <span class="no">File</span><span class="o">.</span><span class="n">exist?</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="p">}</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">f</span><span class="o">|</span>
+    <span class="nb">puts</span> <span class="s2">&quot;Spinning up </span><span class="si">#{</span><span class="n">f</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">socket</span><span class="o">.</span><span class="n">puts</span> <span class="n">f</span>
+  <span class="k">end</span>
+<span class="k">rescue</span> <span class="no">Errno</span><span class="o">::</span><span class="no">ECONNREFUSED</span>
+  <span class="nb">abort</span> <span class="s2">&quot;Connection was refused. Have you started up `spin serve` yet?&quot;</span>
+<span class="k">end</span>
+
+<span class="n">subcommand</span> <span class="o">=</span> <span class="no">ARGV</span><span class="o">.</span><span class="n">shift</span>
+<span class="k">case</span> <span class="n">subcommand</span>
+<span class="k">when</span> <span class="s1">&#39;serve&#39;</span> <span class="k">then</span> <span class="n">serve</span>
+<span class="k">when</span> <span class="s1">&#39;push&#39;</span> <span class="k">then</span> <span class="n">push</span>
+<span class="k">else</span> <span class="n">usage</span>
+<span class="k">end</span></pre></div>
+      </td>
+    </tr>
+  </table>
+</div>
+</body>
