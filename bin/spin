@@ -1,0 +1,111 @@
+#!/usr/bin/env ruby
+#
+# Spin will speed up your autotest(ish) workflow for Rails.
+
+# Spin preloads your Rails environment for testing, so you don't load the same code over and over and over... Spin works best with an autotest(ish) workflow.
+
+require 'socket'
+# This brings in `Dir.tmpdir`
+require 'tempfile'
+# This lets us hash the parameters we want to include in the filename
+# without having to worry about subdirectories, special chars, etc.
+require 'digest/md5'
+# So we can tell users how much time they're saving by preloading their
+# environment.
+require 'benchmark'
+
+def usage(stream = $stderr)
+  stream.puts <<-USAGE
+Usage: spin serve
+       spin push <file>...
+Spin preloads your Rails environment to speed up your autotest(ish) workflow.
+  USAGE
+
+  exit 1
+end
+
+def socket_file
+  key = Digest::MD5.hexdigest [Dir.pwd, 'spin-gem'].join
+  [Dir.tmpdir, key].join('-')
+end
+
+def require_relative?
+  @require_relative ||= respond_to?(:require_relative)
+end
+
+# ## spin serve
+def serve
+  file = socket_file
+  # We delete the tmp file for the Unix socket if it already exists. The file
+  # is scoped to the `pwd`, so if it already exists then it must be from an
+  # old run of `spin serve` and can be cleaned up.
+  File.delete(file) if File.exist?(file)
+  # This socket is how we communicate with `spin push`.
+  socket = UNIXServer.open(file)
+
+  ENV['RAILS_ENV'] = 'test' unless ENV['RAILS_ENV']
+
+  if File.exist? 'config/application.rb'
+    sec = Benchmark.realtime {
+      # We require config/application because that file (typically) loads Rails
+      # and any Bundler deps, as well as loading the initialization code for
+      # the app, but it doesn't actually perform the initialization. That happens
+      # in config/environment.
+      #
+      # In my experience that's the best we can do in terms of preloading. Rails
+      # and the gem dependencies rarely change and so don't need to be reloaded.
+      # But you can't initialize the application because any non-trivial app will
+      # involve it's models/controllers, etc. in its initialization, which you 
+      # definitely don't want to preload.
+      require File.expand_path 'config/application'
+    }
+    # This is the amount of time that you'll save on each subsequent test run.
+    puts "Preloaded Rails env in #{sec}s..."
+  else
+    warn "Could not find config/application.rb. Are you running this from the root of a Rails project?"
+  end
+
+  loop do
+    # Since `spin push` reconnects each time it has a new file for us we just
+    # need to accept(2) connections from it.
+    conn = socket.accept
+    # This should be a relative path to a file.
+    file = conn.gets.chomp
+
+    # We fork(2) before loading the file so that our pristine preloaded
+    # environment is untouched. The child process will load whatever code it
+    # needs to, then it exits and we're back to the baseline preloaded app.
+    fork do
+      puts
+      puts "Loading #{file}"
+
+      # We require the full path of the file here in the child process.
+      require File.expand_path file
+    end
+
+    # We don't want the parent process handling multiple test runs at the same
+    # time because then we'd need to deal with multiple test databases, and
+    # that destroys the idea of being simple to use. So we wait(2) until the
+    # child process has finished running the test.
+    Process.wait
+  end
+end
+
+def push
+  socket = UNIXSocket.open(socket_file)
+  files_to_load = ARGV
+
+  files_to_load.select { |f| File.exist?(f) }.each do |f|
+    puts "Spinning up #{f}"
+    socket.puts f
+  end
+rescue Errno::ECONNREFUSED
+  abort "Connection was refused. Have you started up `spin serve` yet?"
+end
+
+subcommand = ARGV.shift
+case subcommand
+when 'serve' then serve
+when 'push' then push
+else usage
+end
