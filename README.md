@@ -34,13 +34,17 @@ spin push test/unit/product_test.rb
 As mentioned, this tool works best with an autotest(ish) workflow. I haven't actually used with with `autotest` itself, but it works great with [kicker](http://github.com/alloy/kicker). Here's the suggested workflow for a Rails app:
 
 1. Start up the spin server
+
         ``` bash
         spin serve
         ```
+
 2. Start up `kicker` using the custom binary option (and any other options you want)
+
         ``` bash
         kicker -r rails -b 'spin push'
         ```
+
 3. Faster testing workflow!
 
 Motivation
@@ -77,8 +81,8 @@ There's another project ([spork](http://github.com/timcharper/spork)) that aims 
 How it Works
 ============
 
+[spin](http://jstorimer.github.com/spin/)
 [spin serve](http://jstorimer.github.com/spin/#section-spin_serve)
-
 [spin push](http://jstorimer.github.com/spin/#section-spin_push)
 
 Hacking
