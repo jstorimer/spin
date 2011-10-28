@@ -34,13 +34,13 @@ spin push test/unit/product_test.rb
 As mentioned, this tool works best with an autotest(ish) workflow. I haven't actually used with with `autotest` itself, but it works great with [kicker](http://github.com/alloy/kicker). Here's the suggested workflow for a Rails app:
 
 1. Start up the spin server
-``` bash
-spin serve
-```
+        ``` bash
+        spin serve
+        ```
 2. Start up `kicker` using the custom binary option (and any other options you want)
-```bash
-kicker -r rails -b 'spin push'
-```
+        ``` bash
+        kicker -r rails -b 'spin push'
+        ```
 3. Faster testing workflow!
 
 Motivation
@@ -48,9 +48,9 @@ Motivation
 
 A few months back I did an experiment. I opened up the source code to my local copy of the ActiveRecord gem. I added a line at the top of `active_record/base` that incremented a counter in Redis each time it was evaluated. After about a week that counter was well above 2000!
 
-How did I load the ActiveRecord gem over 2000 times in one week? Autotest. I was using all day while developing. The Rails version that the app was tracking doesn't change very often, yet I must load the same code over and over again.
+How did I load the ActiveRecord gem over 2000 times in one week? Autotest. I was using it all day while developing. The Rails version that the app was tracking doesn't change very often, yet I had to load the same code over and over again.
 
-Given that there's no way to compile Ruby code into a faster representation I immediately thought of fork(2). I just need a process to load up Rails and wait around until I need it. When I want to run the tests I just `fork` that idle process and run the test. Then I only have to load Rails once at the start of my workflow, fork(2) takes care of sharing the code with each child process.
+Given that there's no way to compile Ruby code into a faster representation I immediately thought of fork(2). I just need a process to load up Rails and wait around until I need it. When I want to run the tests I just fork(2) that idle process and run the test. Then I only have to load Rails once at the start of my workflow, fork(2) takes care of sharing the code with each child process.
 
 I threw together the first version of this project in about 20 minutes and noticed an immediate difference in the speed of my testing workflow. Did I mention that I work on a big app? It takes about 10 seconds(!) to load Rails and all of the gem dependencies. With a bit more hacking I was able to get the idle process to load both Rails and my application dependencies, so each test run just initializes the application and loads the files needed for the test run. 
 
@@ -66,7 +66,7 @@ There's another project ([spork](http://github.com/timcharper/spork)) that aims 
 
     You'll need to add spork to your Gemfile and introduce your `test_helper.rb` to spork. Spork needs to know details about your app's loading process.
 
-    Spin works with processes so that your app never has to know about it. You can use spin to run your tests while the rest of your team doesn't even know that Spin exists.
+    Spin is designed so that your app never has to know about it. You can use Spin to run your tests while the rest of your team doesn't even know that Spin exists.
 
 2. It's simple.
 
