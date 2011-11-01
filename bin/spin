@@ -79,8 +79,18 @@ def serve
       puts
       puts "Loading #{file}"
 
-      # We require the full path of the file here in the child process.
-      require File.expand_path file
+      # Unfortunately rspec's interface isn't as simple as just requiring the
+      # test file that you want to run (suddenly test/unit seems like the less
+      # crazy one!).
+      if defined?(RSpec)
+        # We pretend the filepath came in as an argument and duplicate the 
+        # behaviour of the `rspec` binary.
+        ARGV.push file
+        require 'rspec/autorun'
+      else
+        # We require the full path of the file here in the child process.
+        require File.expand_path file
+      end
     end
 
     # We don't want the parent process handling multiple test runs at the same
