@@ -55,7 +55,7 @@ module Spin
 
       ENV['RAILS_ENV'] = 'test' unless ENV['RAILS_ENV']
 
-      if File.exist? 'config/application.rb'
+      if File.exist? @options[:init]
         sec = Benchmark.realtime {
           # We require config/application because that file (typically) loads Rails
           # and any Bundler deps, as well as loading the initialization code for
@@ -67,16 +67,16 @@ module Spin
           # But you can't initialize the application because any non-trivial app will
           # involve it's models/controllers, etc. in its initialization, which you 
           # definitely don't want to preload.
-          require File.expand_path 'config/application'
+          require File.expand_path @options[:init]
         }
         # This is the amount of time that you'll save on each subsequent test run.
         puts "Preloaded Rails env in #{sec}s..."
       else
-        warn "Could not find config/application.rb. Are you running this from the root of a Rails project?"
+        warn "Could not find #{@options[:init]}. Are you running this from the root of a Rails project?"
       end
 
-      @options[:framework] ||= :rspec if defined?(RSpec)
-      puts "Will run in #{@options[:framework].inspect} mode." unless @options[:framework].nil?
+      @options[:testing] ||= :rspec if defined?(RSpec)
+      puts "Will run in #{@options[:testing].inspect} mode." unless @options[:testing].nil?
 
       loop do
         # Since `spin push` reconnects each time it has a new file for us we just
@@ -95,7 +95,7 @@ module Spin
           # Unfortunately rspec's interface isn't as simple as just requiring the
           # test file that you want to run (suddenly test/unit seems like the less
           # crazy one!).
-          if @options[:framework] == :rspec
+          if @options[:testing] == :rspec
             puts "RSpec mode"
             # We pretend the filepath came in as an argument and duplicate the 
             # behaviour of the `rspec` binary.
@@ -154,7 +154,9 @@ module Spin
     # Instantiate a new command line with the script an array of arguments.
     def initialize(arguments)
       @arguments = arguments.dup
-      @options = {}
+      @options = {
+        :init => 'config/application.rb'
+      }
     end
 
     # Parse the arguments and sets @command and @options accordingly.
@@ -186,9 +188,13 @@ module Spin
         args.separator ''
         args.separator 'Spin preloads your Rails environment to speed up your autotest(ish) workflow.'
 
-        args.on('-m', '--mode FRAMEWORK', [:test, :rspec],
+        args.on('-t', '--test FRAMEWORK', [:test, :rspec],
                 'Manually select the test framework (test, rspec)') do |value|
-          options[:framework] = value
+          options[:testing] = value
+        end
+
+        args.on('-i', '--init FILE', "Application init file (default: #{options[:init]})") do |file|
+          options[:init] = file
         end
 
         args.on_tail('-h', '--help', 'Show this message') do
