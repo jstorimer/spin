@@ -28,10 +28,6 @@ def socket_file
   [Dir.tmpdir, key].join('/')
 end
 
-def require_relative?
-  @require_relative ||= respond_to?(:require_relative)
-end
-
 # ## spin serve
 def serve(force_rspec = false)
   file = socket_file
