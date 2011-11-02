@@ -29,6 +29,12 @@ As soon as the server is running it will be ready to accept from clients. You ca
 spin push test/unit/product_test.rb
 ```
 
+Or push multiple files to be loaded at once:
+
+``` bash
+spin push test/unit/product_test.rb test/unit/shop_test.rb test/unit/cart_test.rb
+```
+
 ### With Kicker
 
 As mentioned, this tool works best with an autotest(ish) workflow. I haven't actually used with with `autotest` itself, but it works great with [kicker](http://github.com/alloy/kicker). Here's the suggested workflow for a Rails app:

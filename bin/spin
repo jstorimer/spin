@@ -17,7 +17,7 @@ require 'benchmark'
 def usage(stream = $stderr)
   stream.puts <<-USAGE
 Usage: spin serve
-       spin push <file>...
+       spin push <file> <file>...
 Spin preloads your Rails environment to speed up your autotest(ish) workflow.
   USAGE
 
@@ -66,18 +66,19 @@ def serve
   end
 
   loop do
-    # Since `spin push` reconnects each time it has a new file for us we just
+    # Since `spin push` reconnects each time it has new files for us we just
     # need to accept(2) connections from it.
     conn = socket.accept
-    # This should be a relative path to a file.
-    file = conn.gets.chomp
+    # This should be a list of relative paths to files.
+    files = conn.gets.chomp
+    files = files.split(File::PATH_SEPARATOR)
 
     # We fork(2) before loading the file so that our pristine preloaded
     # environment is untouched. The child process will load whatever code it
     # needs to, then it exits and we're back to the baseline preloaded app.
     fork do
       puts
-      puts "Loading #{file}"
+      puts "Loading #{files.inspect}"
 
       # Unfortunately rspec's interface isn't as simple as just requiring the
       # test file that you want to run (suddenly test/unit seems like the less
@@ -85,11 +86,11 @@ def serve
       if defined?(RSpec)
         # We pretend the filepath came in as an argument and duplicate the 
         # behaviour of the `rspec` binary.
-        ARGV.push file
+        ARGV.push files
         require 'rspec/autorun'
       else
         # We require the full path of the file here in the child process.
-        require File.expand_path file
+        files.each { |f| require File.expand_path f }
       end
     end
 
@@ -113,11 +114,12 @@ def push
   # We reject anything in ARGV that isn't a file that exists. This takes
   # care of scripts that specify files like `spin push -r file.rb`. The `-r`
   # bit will just be ignored.
-  files_to_load.select { |f| File.exist?(f) }.each do |f|
-    puts "Spinning up #{f}"
-    # We put the filename on the socket for the server to read and then load.
-    socket.puts f
-  end
+  #
+  # We build a string like `file1.rb:file2.rb` and pass it up to the server.
+  f = files_to_load.select { |f| File.exist?(f) }.join(File::PATH_SEPARATOR)
+  puts "Spinning up #{f}"
+  # We put the filenames on the socket for the server to read and then load.
+  socket.puts f
 rescue Errno::ECONNREFUSED
   abort "Connection was refused. Have you started up `spin serve` yet?"
 end
