@@ -138,7 +138,7 @@ options = OptionParser.new do |opts|
     exit 1
   end
 end
-parser.parse!
+options.parse!
 
 subcommand = ARGV.shift
 case subcommand
