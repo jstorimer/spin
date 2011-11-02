@@ -13,6 +13,7 @@ require 'digest/md5'
 # So we can tell users how much time they're saving by preloading their
 # environment.
 require 'benchmark'
+require 'optparse'
 
 def usage(stream = $stderr)
   stream.puts <<-USAGE
@@ -123,6 +124,12 @@ def push
 rescue Errno::ECONNREFUSED
   abort "Connection was refused. Have you started up `spin serve` yet?"
 end
+
+OptionParser.new do |opts|
+  opts.on("-I", "--load-path=DIR#{File::PATH_SEPARATOR}DIR", "Appends directory to $LOAD_PATH") do |dirs|
+    $LOAD_PATH.concat(dirs.split(File::PATH_SEPARATOR))
+  end
+end.parse!
 
 subcommand = ARGV.shift
 case subcommand
