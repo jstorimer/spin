@@ -15,14 +15,12 @@ require 'digest/md5'
 require 'benchmark'
 require 'optparse'
 
-def usage(stream = $stderr)
-  stream.puts <<-USAGE
+def usage
+  <<-USAGE
 Usage: spin serve
        spin push <file> <file>...
 Spin preloads your Rails environment to speed up your autotest(ish) workflow.
   USAGE
-
-  exit 1
 end
 
 def socket_file
@@ -35,7 +33,7 @@ def require_relative?
 end
 
 # ## spin serve
-def serve
+def serve(force_rspec = false)
   file = socket_file
   # We delete the tmp file for the Unix socket if it already exists. The file
   # is scoped to the `pwd`, so if it already exists then it must be from an
@@ -84,7 +82,7 @@ def serve
       # Unfortunately rspec's interface isn't as simple as just requiring the
       # test file that you want to run (suddenly test/unit seems like the less
       # crazy one!).
-      if defined?(RSpec)
+      if defined?(RSpec) || force_rspec
         # We pretend the filepath came in as an argument and duplicate the 
         # behaviour of the `rspec` binary.
         ARGV.push files
@@ -125,15 +123,32 @@ rescue Errno::ECONNREFUSED
   abort "Connection was refused. Have you started up `spin serve` yet?"
 end
 
-OptionParser.new do |opts|
+force_rspec = false
+options = OptionParser.new do |opts|
+  opts.banner = usage
+  opts.separator ""
+  opts.separator "Options:"
+
   opts.on("-I", "--load-path=DIR#{File::PATH_SEPARATOR}DIR", "Appends directory to $LOAD_PATH") do |dirs|
     $LOAD_PATH.concat(dirs.split(File::PATH_SEPARATOR))
   end
-end.parse!
+
+  opts.on('--rspec', 'Force the selected test framework to RSpec') do |v|
+    force_rspec = v
+  end
+
+  opts.on('-h', '--help') do
+    $stderr.puts opts
+    exit 1
+  end
+end
+parser.parse!
 
 subcommand = ARGV.shift
 case subcommand
-when 'serve' then serve
+when 'serve' then serve(force_rspec)
 when 'push' then push
-else usage
+else
+  $stderr.puts options
+  exit 1
 end
