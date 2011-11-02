@@ -133,6 +133,8 @@ options = OptionParser.new do |opts|
     force_rspec = v
   end
 
+  opts.on('-e', 'Stub to keep kicker happy')
+
   opts.on('-h', '--help') do
     $stderr.puts opts
     exit 1
