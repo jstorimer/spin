@@ -35,6 +35,12 @@ Or push multiple files to be loaded at once:
 spin push test/unit/product_test.rb test/unit/shop_test.rb test/unit/cart_test.rb
 ```
 
+If you experience issues with `test_helper.rb` not being available you may need to add your test directory to the load path using the `-I` option:
+
+``` bash
+spin serve -Itest
+```
+
 ### With Kicker
 
 As mentioned, this tool works best with an autotest(ish) workflow. I haven't actually used with with `autotest` itself, but it works great with [kicker](http://github.com/alloy/kicker). Here's the suggested workflow for a Rails app:
