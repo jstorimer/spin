@@ -1,3 +1,7 @@
+## Version 0.1.4 (Nov 2, 2011)
+
+* Adds a -e option stub to keep kicker happy.
+
 ## Version 0.1.3 (Nov 2, 2011)
 
 * Adds --rspec option to force test framework to rspec.
