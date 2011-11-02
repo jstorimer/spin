@@ -40,7 +40,7 @@ def serve(force_rspec = false)
 
   ENV['RAILS_ENV'] = 'test' unless ENV['RAILS_ENV']
 
-  if File.exist? 'config/application.rb'
+  if File.exist? 'config/environment.rb'
     sec = Benchmark.realtime {
       # We require config/application because that file (typically) loads Rails
       # and any Bundler deps, as well as loading the initialization code for
@@ -50,14 +50,15 @@ def serve(force_rspec = false)
       # In my experience that's the best we can do in terms of preloading. Rails
       # and the gem dependencies rarely change and so don't need to be reloaded.
       # But you can't initialize the application because any non-trivial app will
-      # involve it's models/controllers, etc. in its initialization, which you 
+      # involve it's models/controllers, etc. in its initialization, which you
       # definitely don't want to preload.
-      require File.expand_path 'config/application'
+      require File.expand_path 'config/environment'
     }
     # This is the amount of time that you'll save on each subsequent test run.
     puts "Preloaded Rails env in #{sec}s..."
   else
-    warn "Could not find config/application.rb. Are you running this from the root of a Rails project?"
+
+    warn "Could not find config/environment.rb. Are you running this from the root of a Rails project?"
   end
 
   loop do
@@ -79,10 +80,15 @@ def serve(force_rspec = false)
       # test file that you want to run (suddenly test/unit seems like the less
       # crazy one!).
       if defined?(RSpec) || force_rspec
-        # We pretend the filepath came in as an argument and duplicate the 
+        # We pretend the filepath came in as an argument and duplicate the
         # behaviour of the `rspec` binary.
-        ARGV.push files
-        require 'rspec/autorun'
+        ARGV.push *files
+
+        if Spec::VERSION::STRING =~ /^1/
+          require 'spec/autorun'
+        else
+          require 'rspec/autorun'
+        end
       else
         # We require the full path of the file here in the child process.
         files.each { |f| require File.expand_path f }
@@ -102,7 +108,7 @@ def push
   # This is the other end of the socket that `spin serve` opens. At this point
   # `spin serve` will accept(2) our connection.
   socket = UNIXSocket.open(socket_file)
-  # The filenames that we will spin up to `spin serve` are passed in as 
+  # The filenames that we will spin up to `spin serve` are passed in as
   # arguments.
   files_to_load = ARGV
 
