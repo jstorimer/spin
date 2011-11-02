@@ -71,24 +71,19 @@ environment.</p>
       </td>
       <td class=code>
         <div class='highlight'><pre><span class="nb">require</span> <span class="s1">&#39;benchmark&#39;</span>
+<span class="nb">require</span> <span class="s1">&#39;optparse&#39;</span>
 
-<span class="k">def</span> <span class="nf">usage</span><span class="p">(</span><span class="n">stream</span> <span class="o">=</span> <span class="vg">$stderr</span><span class="p">)</span>
-  <span class="n">stream</span><span class="o">.</span><span class="n">puts</span> <span class="o">&lt;&lt;-</span><span class="no">USAGE</span>
+<span class="k">def</span> <span class="nf">usage</span>
+  <span class="o">&lt;&lt;-</span><span class="no">USAGE</span>
 <span class="sh">Usage: spin serve</span>
-<span class="sh">       spin push &lt;file&gt;...</span>
+<span class="sh">       spin push &lt;file&gt; &lt;file&gt;...</span>
 <span class="sh">Spin preloads your Rails environment to speed up your autotest(ish) workflow.</span>
 <span class="no">  USAGE</span>
-
-  <span class="nb">exit</span> <span class="mi">1</span>
 <span class="k">end</span>
 
 <span class="k">def</span> <span class="nf">socket_file</span>
   <span class="n">key</span> <span class="o">=</span> <span class="no">Digest</span><span class="o">::</span><span class="no">MD5</span><span class="o">.</span><span class="n">hexdigest</span> <span class="o">[</span><span class="no">Dir</span><span class="o">.</span><span class="n">pwd</span><span class="p">,</span> <span class="s1">&#39;spin-gem&#39;</span><span class="o">].</span><span class="n">join</span>
   <span class="o">[</span><span class="no">Dir</span><span class="o">.</span><span class="n">tmpdir</span><span class="p">,</span> <span class="n">key</span><span class="o">].</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
-<span class="k">end</span>
-
-<span class="k">def</span> <span class="nf">require_relative?</span>
-  <span class="vi">@require_relative</span> <span class="o">||=</span> <span class="nb">respond_to?</span><span class="p">(</span><span class="ss">:require_relative</span><span class="p">)</span>
 <span class="k">end</span></pre></div>
       </td>
     </tr>
@@ -100,7 +95,7 @@ environment.</p>
         <h2>spin serve</h2>
       </td>
       <td class=code>
-        <div class='highlight'><pre><span class="k">def</span> <span class="nf">serve</span>
+        <div class='highlight'><pre><span class="k">def</span> <span class="nf">serve</span><span class="p">(</span><span class="n">force_rspec</span> <span class="o">=</span> <span class="kp">false</span><span class="p">)</span>
   <span class="n">file</span> <span class="o">=</span> <span class="n">socket_file</span></pre></div>
       </td>
     </tr>
@@ -175,7 +170,7 @@ definitely don&rsquo;t want to preload.</p>
         <div class="pilwrap">
           <a class="pilcrow" href="#section-11">&#182;</a>
         </div>
-        <p>Since <code>spin push</code> reconnects each time it has a new file for us we just
+        <p>Since <code>spin push</code> reconnects each time it has new files for us we just
 need to accept(2) connections from it.</p>
       </td>
       <td class=code>
@@ -187,10 +182,11 @@ need to accept(2) connections from it.</p>
         <div class="pilwrap">
           <a class="pilcrow" href="#section-12">&#182;</a>
         </div>
-        <p>This should be a relative path to a file.</p>
+        <p>This should be a list of relative paths to files.</p>
       </td>
       <td class=code>
-        <div class='highlight'><pre>    <span class="n">file</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">gets</span><span class="o">.</span><span class="n">chomp</span></pre></div>
+        <div class='highlight'><pre>    <span class="n">files</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">gets</span><span class="o">.</span><span class="n">chomp</span>
+    <span class="n">files</span> <span class="o">=</span> <span class="n">files</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="no">File</span><span class="o">::</span><span class="no">PATH_SEPARATOR</span><span class="p">)</span></pre></div>
       </td>
     </tr>
     <tr id='section-13'>
@@ -205,7 +201,7 @@ needs to, then it exits and we&rsquo;re back to the baseline preloaded app.</p>
       <td class=code>
         <div class='highlight'><pre>    <span class="nb">fork</span> <span class="k">do</span>
       <span class="nb">puts</span>
-      <span class="nb">puts</span> <span class="s2">&quot;Loading </span><span class="si">#{</span><span class="n">file</span><span class="si">}</span><span class="s2">&quot;</span></pre></div>
+      <span class="nb">puts</span> <span class="s2">&quot;Loading </span><span class="si">#{</span><span class="n">files</span><span class="o">.</span><span class="n">inspect</span><span class="si">}</span><span class="s2">&quot;</span></pre></div>
       </td>
     </tr>
     <tr id='section-14'>
@@ -218,7 +214,7 @@ test file that you want to run (suddenly test/unit seems like the less
 crazy one!).</p>
       </td>
       <td class=code>
-        <div class='highlight'><pre>      <span class="k">if</span> <span class="n">defined?</span><span class="p">(</span><span class="no">RSpec</span><span class="p">)</span></pre></div>
+        <div class='highlight'><pre>      <span class="k">if</span> <span class="n">defined?</span><span class="p">(</span><span class="no">RSpec</span><span class="p">)</span> <span class="o">||</span> <span class="n">force_rspec</span></pre></div>
       </td>
     </tr>
     <tr id='section-15'>
@@ -230,7 +226,7 @@ crazy one!).</p>
 behaviour of the <code>rspec</code> binary.</p>
       </td>
       <td class=code>
-        <div class='highlight'><pre>        <span class="no">ARGV</span><span class="o">.</span><span class="n">push</span> <span class="n">file</span>
+        <div class='highlight'><pre>        <span class="no">ARGV</span><span class="o">.</span><span class="n">push</span> <span class="n">files</span>
         <span class="nb">require</span> <span class="s1">&#39;rspec/autorun&#39;</span>
       <span class="k">else</span></pre></div>
       </td>
@@ -243,7 +239,7 @@ behaviour of the <code>rspec</code> binary.</p>
         <p>We require the full path of the file here in the child process.</p>
       </td>
       <td class=code>
-        <div class='highlight'><pre>        <span class="nb">require</span> <span class="no">File</span><span class="o">.</span><span class="n">expand_path</span> <span class="n">file</span>
+        <div class='highlight'><pre>        <span class="n">files</span><span class="o">.</span><span class="n">each</span> <span class="p">{</span> <span class="o">|</span><span class="n">f</span><span class="o">|</span> <span class="nb">require</span> <span class="no">File</span><span class="o">.</span><span class="n">expand_path</span> <span class="n">f</span> <span class="p">}</span>
       <span class="k">end</span>
     <span class="k">end</span></pre></div>
       </td>
@@ -307,10 +303,12 @@ arguments.</p>
         <p>We reject anything in ARGV that isn&rsquo;t a file that exists. This takes
 care of scripts that specify files like <code>spin push -r file.rb</code>. The <code>-r</code>
 bit will just be ignored.</p>
+
+<p>We build a string like <code>file1.rb:file2.rb</code> and pass it up to the server.</p>
       </td>
       <td class=code>
-        <div class='highlight'><pre>  <span class="n">files_to_load</span><span class="o">.</span><span class="n">select</span> <span class="p">{</span> <span class="o">|</span><span class="n">f</span><span class="o">|</span> <span class="no">File</span><span class="o">.</span><span class="n">exist?</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="p">}</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">f</span><span class="o">|</span>
-    <span class="nb">puts</span> <span class="s2">&quot;Spinning up </span><span class="si">#{</span><span class="n">f</span><span class="si">}</span><span class="s2">&quot;</span></pre></div>
+        <div class='highlight'><pre>  <span class="n">f</span> <span class="o">=</span> <span class="n">files_to_load</span><span class="o">.</span><span class="n">select</span> <span class="p">{</span> <span class="o">|</span><span class="n">f</span><span class="o">|</span> <span class="no">File</span><span class="o">.</span><span class="n">exist?</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="p">}</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">File</span><span class="o">::</span><span class="no">PATH_SEPARATOR</span><span class="p">)</span>
+  <span class="nb">puts</span> <span class="s2">&quot;Spinning up </span><span class="si">#{</span><span class="n">f</span><span class="si">}</span><span class="s2">&quot;</span></pre></div>
       </td>
     </tr>
     <tr id='section-22'>
@@ -318,21 +316,43 @@ bit will just be ignored.</p>
         <div class="pilwrap">
           <a class="pilcrow" href="#section-22">&#182;</a>
         </div>
-        <p>We put the filename on the socket for the server to read and then load.</p>
+        <p>We put the filenames on the socket for the server to read and then load.</p>
 
       </td>
       <td class=code>
-        <div class='highlight'><pre>    <span class="n">socket</span><span class="o">.</span><span class="n">puts</span> <span class="n">f</span>
-  <span class="k">end</span>
+        <div class='highlight'><pre>  <span class="n">socket</span><span class="o">.</span><span class="n">puts</span> <span class="n">f</span>
 <span class="k">rescue</span> <span class="no">Errno</span><span class="o">::</span><span class="no">ECONNREFUSED</span>
   <span class="nb">abort</span> <span class="s2">&quot;Connection was refused. Have you started up `spin serve` yet?&quot;</span>
 <span class="k">end</span>
 
+<span class="n">force_rspec</span> <span class="o">=</span> <span class="kp">false</span>
+<span class="n">options</span> <span class="o">=</span> <span class="no">OptionParser</span><span class="o">.</span><span class="n">new</span> <span class="k">do</span> <span class="o">|</span><span class="n">opts</span><span class="o">|</span>
+  <span class="n">opts</span><span class="o">.</span><span class="n">banner</span> <span class="o">=</span> <span class="n">usage</span>
+  <span class="n">opts</span><span class="o">.</span><span class="n">separator</span> <span class="s2">&quot;&quot;</span>
+  <span class="n">opts</span><span class="o">.</span><span class="n">separator</span> <span class="s2">&quot;Options:&quot;</span>
+
+  <span class="n">opts</span><span class="o">.</span><span class="n">on</span><span class="p">(</span><span class="s2">&quot;-I&quot;</span><span class="p">,</span> <span class="s2">&quot;--load-path=DIR</span><span class="si">#{</span><span class="no">File</span><span class="o">::</span><span class="no">PATH_SEPARATOR</span><span class="si">}</span><span class="s2">DIR&quot;</span><span class="p">,</span> <span class="s2">&quot;Appends directory to $LOAD_PATH&quot;</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">dirs</span><span class="o">|</span>
+    <span class="vg">$LOAD_PATH</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">dirs</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="no">File</span><span class="o">::</span><span class="no">PATH_SEPARATOR</span><span class="p">))</span>
+  <span class="k">end</span>
+
+  <span class="n">opts</span><span class="o">.</span><span class="n">on</span><span class="p">(</span><span class="s1">&#39;--rspec&#39;</span><span class="p">,</span> <span class="s1">&#39;Force the selected test framework to RSpec&#39;</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">v</span><span class="o">|</span>
+    <span class="n">force_rspec</span> <span class="o">=</span> <span class="n">v</span>
+  <span class="k">end</span>
+
+  <span class="n">opts</span><span class="o">.</span><span class="n">on</span><span class="p">(</span><span class="s1">&#39;-h&#39;</span><span class="p">,</span> <span class="s1">&#39;--help&#39;</span><span class="p">)</span> <span class="k">do</span>
+    <span class="vg">$stderr</span><span class="o">.</span><span class="n">puts</span> <span class="n">opts</span>
+    <span class="nb">exit</span> <span class="mi">1</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+<span class="n">options</span><span class="o">.</span><span class="n">parse!</span>
+
 <span class="n">subcommand</span> <span class="o">=</span> <span class="no">ARGV</span><span class="o">.</span><span class="n">shift</span>
 <span class="k">case</span> <span class="n">subcommand</span>
-<span class="k">when</span> <span class="s1">&#39;serve&#39;</span> <span class="k">then</span> <span class="n">serve</span>
+<span class="k">when</span> <span class="s1">&#39;serve&#39;</span> <span class="k">then</span> <span class="n">serve</span><span class="p">(</span><span class="n">force_rspec</span><span class="p">)</span>
 <span class="k">when</span> <span class="s1">&#39;push&#39;</span> <span class="k">then</span> <span class="n">push</span>
-<span class="k">else</span> <span class="n">usage</span>
+<span class="k">else</span>
+  <span class="vg">$stderr</span><span class="o">.</span><span class="n">puts</span> <span class="n">options</span>
+  <span class="nb">exit</span> <span class="mi">1</span>
 <span class="k">end</span></pre></div>
       </td>
     </tr>
