@@ -103,8 +103,13 @@ def push
   # `spin serve` will accept(2) our connection.
   socket = UNIXSocket.open(socket_file)
   # The filenames that we will spin up to `spin serve` are passed in as 
-  # arguments.
-  files_to_load = ARGV
+  # arguments. This can either be as a single file ('file.rb'), a
+  # comma-separated list ('file1, lib/file2'), or a glob ('spec/**/*_spec.rb')
+  if ARGV.size > 1
+    files_to_load = ARGV
+  else
+    files_to_load = Dir.glob(ARGV)
+  end
 
   # We reject anything in ARGV that isn't a file that exists. This takes
   # care of scripts that specify files like `spin push -r file.rb`. The `-r`
