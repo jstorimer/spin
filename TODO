@@ -4,7 +4,7 @@
 [ ] Since we already have the environment preloaded, why couldn't we use that to fork off a rails console? 
     or rails server? `spin console`
 
-[ ] Test this with different testing frameworks. rspec? minitest?
+[ ] Can we someone get it to run single tests? Like the -n /foo_test/ option.
 
 [ ] Test with different app frameworks. config/application is obviously rails-specific. This depends on item #1.
 
