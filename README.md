@@ -59,6 +59,13 @@ As mentioned, this tool works best with an autotest(ish) workflow. I haven't act
 
 3. Faster testing workflow!
 
+Compat
+======
+
+* Compatible with any version of test/unit or MiniTest
+* Compatible with RSpec 2.x
+* Compatible with Rails 3.x
+
 Motivation
 ==========
 
