@@ -47,15 +47,15 @@ As mentioned, this tool works best with an autotest(ish) workflow. I haven't act
 
 1. Start up the spin server
 
-  ``` bash
-  spin serve
-  ```
+    ``` bash
+    spin serve
+    ```
 
 2. Start up `kicker` using the custom binary option (and any other options you want)
 
-  ``` bash
-  kicker -r rails -b 'spin push'
-  ```
+    ``` bash
+    kicker -r rails -b 'spin push'
+    ```
 
 3. Faster testing workflow!
 
