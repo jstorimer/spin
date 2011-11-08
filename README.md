@@ -81,7 +81,7 @@ I threw together the first version of this project in about 20 minutes and notic
 
 ### How is it different from Spork?
 
-There's another project ([spork](http://github.com/timcharper/spork)) that aims to solve the same problem, but takes a different approach.
+There's another project ([spork](https://github.com/sporkrb/spork)) that aims to solve the same problem, but takes a different approach.
 
 1. It's unobtrusive.
 
@@ -95,7 +95,7 @@ There's another project ([spork](http://github.com/timcharper/spork)) that aims 
 
     Spin should work out of the box with any Rails app. No custom configuration required.
 
-3. It doesn't do any [crazy monkey patching](https://github.com/timcharper/spork/blob/master/lib/spork/app_framework/rails.rb#L43-80).
+3. It doesn't do any [crazy monkey patching](https://github.com/sporkrb/spork/blob/master/lib/spork/app_framework/rails.rb#L43-80).
 
 How it Works
 ============
