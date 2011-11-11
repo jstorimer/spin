@@ -50,7 +50,7 @@ def serve(force_rspec = false)
       # In my experience that's the best we can do in terms of preloading. Rails
       # and the gem dependencies rarely change and so don't need to be reloaded.
       # But you can't initialize the application because any non-trivial app will
-      # involve it's models/controllers, etc. in its initialization, which you 
+      # involve it's models/controllers, etc. in its initialization, which you
       # definitely don't want to preload.
       require File.expand_path 'config/application'
     }
@@ -79,7 +79,7 @@ def serve(force_rspec = false)
       # test file that you want to run (suddenly test/unit seems like the less
       # crazy one!).
       if defined?(RSpec) || force_rspec
-        # We pretend the filepath came in as an argument and duplicate the 
+        # We pretend the filepath came in as an argument and duplicate the
         # behaviour of the `rspec` binary.
         ARGV.push files
         require 'rspec/autorun'
@@ -102,7 +102,7 @@ def push
   # This is the other end of the socket that `spin serve` opens. At this point
   # `spin serve` will accept(2) our connection.
   socket = UNIXSocket.open(socket_file)
-  # The filenames that we will spin up to `spin serve` are passed in as 
+  # The filenames that we will spin up to `spin serve` are passed in as
   # arguments.
   files_to_load = ARGV
 
