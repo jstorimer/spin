@@ -29,7 +29,7 @@ def socket_file
 end
 
 # ## spin serve
-def serve(force_rspec = false)
+def serve(force_rspec = false, time = false)
   file = socket_file
   # We delete the tmp file for the Unix socket if it already exists. The file
   # is scoped to the `pwd`, so if it already exists then it must be from an
@@ -68,6 +68,10 @@ def serve(force_rspec = false)
     files = conn.gets.chomp
     files = files.split(File::PATH_SEPARATOR)
 
+    # If spin is started with the time flag we will track total execution so
+    # you can easily compare it with time rspec spec for example
+    start = Time.now if time
+
     # We fork(2) before loading the file so that our pristine preloaded
     # environment is untouched. The child process will load whatever code it
     # needs to, then it exits and we're back to the baseline preloaded app.
@@ -94,6 +98,10 @@ def serve(force_rspec = false)
     # that destroys the idea of being simple to use. So we wait(2) until the
     # child process has finished running the test.
     Process.wait
+
+    # If we are tracking time we will output it here after everything has
+    # finished running
+    puts "Total execution time was #{Time.now - start} seconds" if start
   end
 end
 
@@ -120,6 +128,7 @@ rescue Errno::ECONNREFUSED
 end
 
 force_rspec = false
+time = false
 options = OptionParser.new do |opts|
   opts.banner = usage
   opts.separator ""
@@ -135,6 +144,10 @@ options = OptionParser.new do |opts|
 
   opts.on('-e', 'Stub to keep kicker happy')
 
+  opts.on('-t', '--time') do |v|
+    time = true
+  end
+
   opts.on('-h', '--help') do
     $stderr.puts opts
     exit 1
@@ -144,7 +157,7 @@ options.parse!
 
 subcommand = ARGV.shift
 case subcommand
-when 'serve' then serve(force_rspec)
+when 'serve' then serve(force_rspec, time)
 when 'push' then push
 else
   $stderr.puts options
