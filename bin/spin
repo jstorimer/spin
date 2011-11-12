@@ -1,5 +1,4 @@
 #!/usr/bin/env ruby
-#
 # Spin will speed up your autotest(ish) workflow for Rails.
 
 # Spin preloads your Rails environment for testing, so you don't load the same code over and over and over... Spin works best with an autotest(ish) workflow.
@@ -28,8 +27,13 @@ def socket_file
   [Dir.tmpdir, key].join('/')
 end
 
+def disconnect(connection)
+  connection.print "\0"
+  connection.close
+end
+
 # ## spin serve
-def serve(force_rspec = false)
+def serve(force_rspec = false, push_results = false)
   file = socket_file
   # We delete the tmp file for the Unix socket if it already exists. The file
   # is scoped to the `pwd`, so if it already exists then it must be from an
@@ -50,7 +54,7 @@ def serve(force_rspec = false)
       # In my experience that's the best we can do in terms of preloading. Rails
       # and the gem dependencies rarely change and so don't need to be reloaded.
       # But you can't initialize the application because any non-trivial app will
-      # involve it's models/controllers, etc. in its initialization, which you 
+      # involve it's models/controllers, etc. in its initialization, which you
       # definitely don't want to preload.
       require File.expand_path 'config/application'
     }
@@ -60,6 +64,8 @@ def serve(force_rspec = false)
     warn "Could not find config/application.rb. Are you running this from the root of a Rails project?"
   end
 
+  puts "Pushing test results to push processes" if push_results
+
   loop do
     # Since `spin push` reconnects each time it has new files for us we just
     # need to accept(2) connections from it.
@@ -68,10 +74,21 @@ def serve(force_rspec = false)
     files = conn.gets.chomp
     files = files.split(File::PATH_SEPARATOR)
 
+    # If we're not sending results back to the push process, we can disconnect
+    # it immediately.
+    disconnect(conn) unless push_results
+
     # We fork(2) before loading the file so that our pristine preloaded
     # environment is untouched. The child process will load whatever code it
     # needs to, then it exits and we're back to the baseline preloaded app.
     fork do
+      # To push the test results to the push process instead of having them
+      # displayed by the server, we redirect $stdout to the open connection.
+      if push_results
+        $stderr = $stdout = conn
+        MiniTest::Unit.output = conn if defined?(MiniTest::Unit)
+      end
+
       puts
       puts "Loading #{files.inspect}"
 
@@ -79,7 +96,7 @@ def serve(force_rspec = false)
       # test file that you want to run (suddenly test/unit seems like the less
       # crazy one!).
       if defined?(RSpec) || force_rspec
-        # We pretend the filepath came in as an argument and duplicate the 
+        # We pretend the filepath came in as an argument and duplicate the
         # behaviour of the `rspec` binary.
         ARGV.push files
         require 'rspec/autorun'
@@ -94,6 +111,14 @@ def serve(force_rspec = false)
     # that destroys the idea of being simple to use. So we wait(2) until the
     # child process has finished running the test.
     Process.wait
+
+    # Tests have now run. If we were pushing results to a push process, we can
+    # now disconnect it.
+    begin
+      disconnect(conn) if push_results
+    rescue Errno::EPIPE
+      # Don't abort if the client already disconnected
+    end
   end
 end
 
@@ -102,7 +127,7 @@ def push
   # This is the other end of the socket that `spin serve` opens. At this point
   # `spin serve` will accept(2) our connection.
   socket = UNIXSocket.open(socket_file)
-  # The filenames that we will spin up to `spin serve` are passed in as 
+  # The filenames that we will spin up to `spin serve` are passed in as
   # arguments.
   files_to_load = ARGV
 
@@ -115,11 +140,16 @@ def push
   puts "Spinning up #{f}"
   # We put the filenames on the socket for the server to read and then load.
   socket.puts f
+
+  while line = socket.gets
+    break if line == "\0"
+    print line
+  end
 rescue Errno::ECONNREFUSED
   abort "Connection was refused. Have you started up `spin serve` yet?"
 end
 
-force_rspec = false
+force_rspec = push_results = false
 options = OptionParser.new do |opts|
   opts.banner = usage
   opts.separator ""
@@ -133,6 +163,10 @@ options = OptionParser.new do |opts|
     force_rspec = v
   end
 
+  opts.on('--push-results', 'Push test results to the push process') do |p|
+    push_results = p
+  end
+
   opts.on('-e', 'Stub to keep kicker happy')
 
   opts.on('-h', '--help') do
@@ -144,7 +178,7 @@ options.parse!
 
 subcommand = ARGV.shift
 case subcommand
-when 'serve' then serve(force_rspec)
+when 'serve' then serve(force_rspec, push_results)
 when 'push' then push
 else
   $stderr.puts options
