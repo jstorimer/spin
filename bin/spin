@@ -107,9 +107,6 @@ end
 
 # ## spin push
 def push
-  # This is the other end of the socket that `spin serve` opens. At this point
-  # `spin serve` will accept(2) our connection.
-  socket = UNIXSocket.open(socket_file)
   # The filenames that we will spin up to `spin serve` are passed in as
   # arguments.
   files_to_load = ARGV
@@ -120,7 +117,12 @@ def push
   #
   # We build a string like `file1.rb:file2.rb` and pass it up to the server.
   f = files_to_load.select { |f| File.exist?(f) }.join(File::PATH_SEPARATOR)
+  abort if f.empty?
   puts "Spinning up #{f}"
+
+  # This is the other end of the socket that `spin serve` opens. At this point
+  # `spin serve` will accept(2) our connection.
+  socket = UNIXSocket.open(socket_file)
   # We put the filenames on the socket for the server to read and then load.
   socket.puts f
 rescue Errno::ECONNREFUSED
