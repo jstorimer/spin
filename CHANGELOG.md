@@ -1,3 +1,8 @@
+## Version 0.1.5 (Nov. 15, 2011)
+
+* Add --time flag to see total execution time [Mark Mulder]
+* Doesn't spin up anything if push received no valid files (Fixes #13)
+
 ## Version 0.1.4 (Nov 2, 2011)
 
 * Adds a -e option stub to keep kicker happy.
