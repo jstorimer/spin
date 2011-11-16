@@ -116,7 +116,7 @@ def push
   # bit will just be ignored.
   #
   # We build a string like `file1.rb:file2.rb` and pass it up to the server.
-  f = files_to_load.select { |f| File.exist?(f) }.join(File::PATH_SEPARATOR)
+  f = files_to_load.select { |f| File.exist?(f) }.uniq.join(File::PATH_SEPARATOR)
   abort if f.empty?
   puts "Spinning up #{f}"
 
