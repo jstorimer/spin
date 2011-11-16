@@ -76,7 +76,7 @@ def serve(force_rspec, force_testunit, time, push_results)
     warn "Could not find config/application.rb. Are you running this from the root of a Rails project?"
   end
 
-  puts "Pushing test results to push processes" if push_results
+  puts "Pushing test results back to push processes" if push_results
 
   loop do
     # Since `spin push` reconnects each time it has new files for us we just
@@ -99,10 +99,11 @@ def serve(force_rspec, force_testunit, time, push_results)
     # needs to, then it exits and we're back to the baseline preloaded app.
     fork do
       # To push the test results to the push process instead of having them
-      # displayed by the server, we redirect $stdout to the open connection.
+      # displayed by the server, we reopen $stdout/$stderr to the open 
+      # connection.
       if push_results
-        $stderr = $stdout = conn
-        MiniTest::Unit.output = conn if defined?(MiniTest::Unit)
+        $stdout.reopen(conn)
+        $stderr.reopen(conn)
       end
 
       puts
