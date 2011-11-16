@@ -28,8 +28,20 @@ def socket_file
   [Dir.tmpdir, key].join('/')
 end
 
+def determine_test_framework(force_rspec, force_testunit)
+  if force_rspec
+    :rspec
+  elsif force_testunit
+    :testunit
+  elsif defined?(RSpec)
+    :rspec
+  else
+    :testunit
+  end
+end
+
 # ## spin serve
-def serve(force_rspec = false, time = false)
+def serve(force_rspec, force_testunit, time)
   file = socket_file
   # We delete the tmp file for the Unix socket if it already exists. The file
   # is scoped to the `pwd`, so if it already exists then it must be from an
@@ -79,10 +91,14 @@ def serve(force_rspec = false, time = false)
       puts
       puts "Loading #{files.inspect}"
 
+      # Determine the test framework to use using the passed-in 'force' options
+      # or else default to checking for defined constants.
+      test_framework = determine_test_framework(force_rspec, force_testunit)
+
       # Unfortunately rspec's interface isn't as simple as just requiring the
       # test file that you want to run (suddenly test/unit seems like the less
       # crazy one!).
-      if defined?(RSpec) || force_rspec
+      if test_framework == :rspec
         # We pretend the filepath came in as an argument and duplicate the
         # behaviour of the `rspec` binary.
         ARGV.push files
@@ -130,11 +146,12 @@ rescue Errno::ECONNREFUSED
 end
 
 force_rspec = false
+force_testunit = false
 time = false
 options = OptionParser.new do |opts|
   opts.banner = usage
   opts.separator ""
-  opts.separator "Options:"
+  opts.separator "Server Options:"
 
   opts.on("-I", "--load-path=DIR#{File::PATH_SEPARATOR}DIR", "Appends directory to $LOAD_PATH") do |dirs|
     $LOAD_PATH.concat(dirs.split(File::PATH_SEPARATOR))
@@ -144,12 +161,16 @@ options = OptionParser.new do |opts|
     force_rspec = v
   end
 
-  opts.on('-e', 'Stub to keep kicker happy')
+  opts.on('--test-unit', 'Force the selected test framework to Test::Unit') do |v|
+    force_testunit = v
+  end
 
-  opts.on('-t', '--time') do |v|
+  opts.on('-t', '--time', 'See total execution time for each test run') do |v|
     time = true
   end
 
+  opts.separator "General Options:"
+  opts.on('-e', 'Stub to keep kicker happy')
   opts.on('-h', '--help') do
     $stderr.puts opts
     exit 1
@@ -159,7 +180,7 @@ options.parse!
 
 subcommand = ARGV.shift
 case subcommand
-when 'serve' then serve(force_rspec, time)
+when 'serve' then serve(force_rspec, force_testunit, time)
 when 'push' then push
 else
   $stderr.puts options
