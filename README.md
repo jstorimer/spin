@@ -97,6 +97,18 @@ There's another project ([spork](https://github.com/sporkrb/spork)) that aims to
 
 3. It doesn't do any [crazy monkey patching](https://github.com/sporkrb/spork/blob/master/lib/spork/app_framework/rails.rb#L43-80).
 
+### How is it different from TestR?
+
+There's another project ([TestR](https://github.com/sunaku/testr)) that aims to solve the same problem, but takes a different approach and, incidentally, has [the ability to emulate Spin](https://gist.github.com/1352391) itself.
+
+1. It's simple.
+
+    Spin should work out of the box with any Rails app. No custom configuration required.
+
+2. It's manual.
+
+    Spin lets *you* manually kill and re-run `spin serve` in order to re-preload your Rails environment after you modify it. TestR does this automatically without killing itself.
+
 How it Works
 ============
 
