@@ -1,5 +1,4 @@
 #!/usr/bin/env ruby
-#
 # Spin will speed up your autotest(ish) workflow for Rails.
 
 # Spin preloads your Rails environment for testing, so you don't load the same code over and over and over... Spin works best with an autotest(ish) workflow.
@@ -40,8 +39,13 @@ def determine_test_framework(force_rspec, force_testunit)
   end
 end
 
+def disconnect(connection)
+  connection.print "\0"
+  connection.close
+end
+
 # ## spin serve
-def serve(force_rspec, force_testunit, time)
+def serve(force_rspec, force_testunit, time, push_results)
   file = socket_file
   # We delete the tmp file for the Unix socket if it already exists. The file
   # is scoped to the `pwd`, so if it already exists then it must be from an
@@ -72,6 +76,8 @@ def serve(force_rspec, force_testunit, time)
     warn "Could not find config/application.rb. Are you running this from the root of a Rails project?"
   end
 
+  puts "Pushing test results to push processes" if push_results
+
   loop do
     # Since `spin push` reconnects each time it has new files for us we just
     # need to accept(2) connections from it.
@@ -83,11 +89,22 @@ def serve(force_rspec, force_testunit, time)
     # If spin is started with the time flag we will track total execution so
     # you can easily compare it with time rspec spec for example
     start = Time.now if time
+    
+    # If we're not sending results back to the push process, we can disconnect
+    # it immediately.
+    disconnect(conn) unless push_results
 
     # We fork(2) before loading the file so that our pristine preloaded
     # environment is untouched. The child process will load whatever code it
     # needs to, then it exits and we're back to the baseline preloaded app.
     fork do
+      # To push the test results to the push process instead of having them
+      # displayed by the server, we redirect $stdout to the open connection.
+      if push_results
+        $stderr = $stdout = conn
+        MiniTest::Unit.output = conn if defined?(MiniTest::Unit)
+      end
+
       puts
       puts "Loading #{files.inspect}"
 
@@ -118,6 +135,14 @@ def serve(force_rspec, force_testunit, time)
     # If we are tracking time we will output it here after everything has
     # finished running
     puts "Total execution time was #{Time.now - start} seconds" if start
+    
+    # Tests have now run. If we were pushing results to a push process, we can
+    # now disconnect it.
+    begin
+      disconnect(conn) if push_results
+    rescue Errno::EPIPE
+      # Don't abort if the client already disconnected
+    end
   end
 end
 
@@ -141,6 +166,11 @@ def push
   socket = UNIXSocket.open(socket_file)
   # We put the filenames on the socket for the server to read and then load.
   socket.puts f
+
+  while line = socket.gets
+    break if line == "\0"
+    print line
+  end
 rescue Errno::ECONNREFUSED
   abort "Connection was refused. Have you started up `spin serve` yet?"
 end
@@ -148,6 +178,7 @@ end
 force_rspec = false
 force_testunit = false
 time = false
+push_results = false
 options = OptionParser.new do |opts|
   opts.banner = usage
   opts.separator ""
@@ -169,6 +200,10 @@ options = OptionParser.new do |opts|
     time = true
   end
 
+  opts.on('--push-results', 'Push test results to the push process') do |v|
+    push_results = v
+  end
+
   opts.separator "General Options:"
   opts.on('-e', 'Stub to keep kicker happy')
   opts.on('-h', '--help') do
@@ -180,7 +215,7 @@ options.parse!
 
 subcommand = ARGV.shift
 case subcommand
-when 'serve' then serve(force_rspec, force_testunit, time)
+when 'serve' then serve(force_rspec, force_testunit, time, push_results)
 when 'push' then push
 else
   $stderr.puts options
