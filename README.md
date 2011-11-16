@@ -113,3 +113,11 @@ Hacking
 
 I take pull requests, and it's commit bit, and there are no tests.
 
+Related Projects
+===============
+
+If Spin isn't scratching your itch then one of these projects might:
+
+* [Spork](https://github.com/sporkrb/spork)
+* [TestR](https://github.com/sunaku/testr)
+
