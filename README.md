@@ -1,9 +1,10 @@
 Spin
 ====
 
-Spin preloads your Rails environment to speed up your autotest(ish) workflow.
+Spin speeds up your Rails testing workflow.
 
-By preloading your Rails environment for testing you don't load the same code over and over and over... Spin works best for an autotest(ish) workflow.
+By preloading your Rails environment in one process and then using fork(2) for each test run you don't load the same code over and over and over...
+Spin works with an autotest(ish) workflow.
 
 Installation
 ===========
@@ -13,6 +14,11 @@ Spin is available as a rubygem.
 ``` ruby
 gem i spin
 ```
+
+Spin is a tool for Rails 3 apps. It is compatible with the following testing libraries:
+
+* any version of test/unit or MiniTest
+* RSpec 2.x
 
 Usage
 =====
@@ -59,13 +65,6 @@ As mentioned, this tool works best with an autotest(ish) workflow. I haven't act
 
 3. Faster testing workflow!
 
-Compat
-======
-
-* Compatible with any version of test/unit or MiniTest
-* Compatible with RSpec 2.x
-* Compatible with Rails 3.x
-
 Motivation
 ==========
 
@@ -97,16 +96,14 @@ There's another project ([spork](https://github.com/sporkrb/spork)) that aims to
 
 3. It doesn't do any [crazy monkey patching](https://github.com/sporkrb/spork/blob/master/lib/spork/app_framework/rails.rb#L43-80).
 
-How it Works
+Docs
 ============
 
-Annotated source with [Rocco](http://rtomayko.github.com/rocco/)
+[Rocco](http://rtomayko.github.com/rocco/)-annotated source:
 
-[spin](http://jstorimer.github.com/spin/)
-
-[spin serve](http://jstorimer.github.com/spin/#section-spin_serve)
-
-[spin push](http://jstorimer.github.com/spin/#section-spin_push)
+* [spin](http://jstorimer.github.com/spin/)
+    * [spin serve](http://jstorimer.github.com/spin/#section-spin_serve)
+    * [spin push](http://jstorimer.github.com/spin/#section-spin_push)
 
 Hacking
 =======
