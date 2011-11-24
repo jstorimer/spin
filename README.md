@@ -41,6 +41,12 @@ Or push multiple files to be loaded at once:
 spin push test/unit/product_test.rb test/unit/shop_test.rb test/unit/cart_test.rb
 ```
 
+Or, when using RSpec, run the whole suite:
+
+``` bash
+spin push spec
+```
+
 If you experience issues with `test_helper.rb` not being available you may need to add your test directory to the load path using the `-I` option:
 
 ``` bash
@@ -74,7 +80,7 @@ How did I load the ActiveRecord gem over 2000 times in one week? Autotest. I was
 
 Given that there's no way to compile Ruby code into a faster representation I immediately thought of fork(2). I just need a process to load up Rails and wait around until I need it. When I want to run the tests I just fork(2) that idle process and run the test. Then I only have to load Rails once at the start of my workflow, fork(2) takes care of sharing the code with each child process.
 
-I threw together the first version of this project in about 20 minutes and noticed an immediate difference in the speed of my testing workflow. Did I mention that I work on a big app? It takes about 10 seconds(!) to load Rails and all of the gem dependencies. With a bit more hacking I was able to get the idle process to load both Rails and my application dependencies, so each test run just initializes the application and loads the files needed for the test run. 
+I threw together the first version of this project in about 20 minutes and noticed an immediate difference in the speed of my testing workflow. Did I mention that I work on a big app? It takes about 10 seconds(!) to load Rails and all of the gem dependencies. With a bit more hacking I was able to get the idle process to load both Rails and my application dependencies, so each test run just initializes the application and loads the files needed for the test run.
 
 (10 seconds saved per test run) x (2000 test runs per week) = (lots of time saved!)
 
