@@ -46,10 +46,6 @@ end
 
 # ## spin serve
 def serve(force_rspec, force_testunit, time, push_results)
-  # Determine the test framework to use using the passed-in 'force' options
-  # or else default to checking for defined constants.
-  test_framework = determine_test_framework(force_rspec, force_testunit)
-
   file = socket_file
 
   # We delete the tmp file for the Unix socket if it already exists. The file
@@ -61,6 +57,8 @@ def serve(force_rspec, force_testunit, time, push_results)
   socket = UNIXServer.open(file)
 
   ENV['RAILS_ENV'] = 'test' unless ENV['RAILS_ENV']
+
+  test_framework = nil
 
   if File.exist? 'config/application.rb'
     sec = Benchmark.realtime {
@@ -76,8 +74,12 @@ def serve(force_rspec, force_testunit, time, push_results)
       # definitely don't want to preload.
       require File.expand_path 'config/application'
 
-      # This saves several seconds on each test run
-      ['rspec', 'rspec/rails'].each do |gem|
+      # Determine the test framework to use using the passed-in 'force' options
+      # or else default to checking for defined constants.
+      test_framework = determine_test_framework(force_rspec, force_testunit)
+
+      # Preload RSpec to save some time on each test run
+      ['rspec', 'rspec/rails', 'rspec/autorun'].each do |gem|
         begin
           require gem
         rescue LoadError
@@ -131,7 +133,6 @@ def serve(force_rspec, force_testunit, time, push_results)
         # We pretend the filepath came in as an argument and duplicate the
         # behaviour of the `rspec` binary.
         ARGV.push files
-        require 'rspec/autorun'
       else
         # We require the full path of the file here in the child process.
         files.each { |f| require File.expand_path f }
