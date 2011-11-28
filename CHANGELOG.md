@@ -1,3 +1,7 @@
+## Version 0.2.1 (Nov. 27, 2011)
+
+* RSpec is now preloaded for RSpec users. Shaves up to a few seconds off of each test run. [Marek Prihoda]
+
 ## Version 0.2.0 (Nov. 19, 2011)
 
 * Added a -p (--push-results) flag that displays results in the push process.
