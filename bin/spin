@@ -47,14 +47,18 @@ end
 # ## spin serve
 def serve(force_rspec, force_testunit, time, push_results)
   file = socket_file
+
   # We delete the tmp file for the Unix socket if it already exists. The file
   # is scoped to the `pwd`, so if it already exists then it must be from an
   # old run of `spin serve` and can be cleaned up.
   File.delete(file) if File.exist?(file)
+
   # This socket is how we communicate with `spin push`.
   socket = UNIXServer.open(file)
 
   ENV['RAILS_ENV'] = 'test' unless ENV['RAILS_ENV']
+
+  test_framework = nil
 
   if File.exist? 'config/application.rb'
     sec = Benchmark.realtime {
@@ -69,6 +73,19 @@ def serve(force_rspec, force_testunit, time, push_results)
       # involve it's models/controllers, etc. in its initialization, which you
       # definitely don't want to preload.
       require File.expand_path 'config/application'
+
+      # Determine the test framework to use using the passed-in 'force' options
+      # or else default to checking for defined constants.
+      test_framework = determine_test_framework(force_rspec, force_testunit)
+
+      # Preload RSpec to save some time on each test run
+      ['rspec', 'rspec/rails', 'rspec/autorun'].each do |gem|
+        begin
+          require gem
+        rescue LoadError
+          # do nothing
+        end
+      end if test_framework == :rspec
     }
     # This is the amount of time that you'll save on each subsequent test run.
     puts "Preloaded Rails env in #{sec}s..."
@@ -89,7 +106,7 @@ def serve(force_rspec, force_testunit, time, push_results)
     # If spin is started with the time flag we will track total execution so
     # you can easily compare it with time rspec spec for example
     start = Time.now if time
-    
+
     # If we're not sending results back to the push process, we can disconnect
     # it immediately.
     disconnect(conn) unless push_results
@@ -99,7 +116,7 @@ def serve(force_rspec, force_testunit, time, push_results)
     # needs to, then it exits and we're back to the baseline preloaded app.
     fork do
       # To push the test results to the push process instead of having them
-      # displayed by the server, we reopen $stdout/$stderr to the open 
+      # displayed by the server, we reopen $stdout/$stderr to the open
       # connection.
       if push_results
         $stdout.reopen(conn)
@@ -109,10 +126,6 @@ def serve(force_rspec, force_testunit, time, push_results)
       puts
       puts "Loading #{files.inspect}"
 
-      # Determine the test framework to use using the passed-in 'force' options
-      # or else default to checking for defined constants.
-      test_framework = determine_test_framework(force_rspec, force_testunit)
-
       # Unfortunately rspec's interface isn't as simple as just requiring the
       # test file that you want to run (suddenly test/unit seems like the less
       # crazy one!).
@@ -120,7 +133,6 @@ def serve(force_rspec, force_testunit, time, push_results)
         # We pretend the filepath came in as an argument and duplicate the
         # behaviour of the `rspec` binary.
         ARGV.push files
-        require 'rspec/autorun'
       else
         # We require the full path of the file here in the child process.
         files.each { |f| require File.expand_path f }
@@ -136,7 +148,7 @@ def serve(force_rspec, force_testunit, time, push_results)
     # If we are tracking time we will output it here after everything has
     # finished running
     puts "Total execution time was #{Time.now - start} seconds" if start
-    
+
     # Tests have now run. If we were pushing results to a push process, we can
     # now disconnect it.
     begin
@@ -222,3 +234,4 @@ else
   $stderr.puts options
   exit 1
 end
+
