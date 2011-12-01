@@ -169,8 +169,8 @@ def fork_and_run(files, push_results, test_framework)
       files.each { |f| require File.expand_path f }
     end
 
-    @last_files_ran = files
   end
+  @last_files_ran = files
 end
 
 # ## spin push
