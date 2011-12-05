@@ -79,12 +79,10 @@ def serve(force_rspec, force_testunit, time, push_results)
       test_framework = determine_test_framework(force_rspec, force_testunit)
 
       # Preload RSpec to save some time on each test run
-      ['rspec', 'rspec/rails', 'rspec/autorun'].each do |gem|
-        begin
-          require gem
-        rescue LoadError
-          # do nothing
-        end
+      begin
+        require 'rspec/rails'
+        require 'rspec/autorun'
+      rescue LoadError
       end if test_framework == :rspec
     }
     # This is the amount of time that you'll save on each subsequent test run.
