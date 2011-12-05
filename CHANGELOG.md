@@ -1,3 +1,7 @@
+## Versino 0.3.0 (Dec. 4, 2011)
+
+* Stream results back to the client when using --push-results [Ben Brinckerhoff]
+
 ## Version 0.2.1 (Nov. 27, 2011)
 
 * RSpec is now preloaded for RSpec users. Shaves up to a few seconds off of each test run. [Marek Prihoda]
