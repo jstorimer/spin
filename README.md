@@ -47,6 +47,12 @@ Or, when using RSpec, run the whole suite:
 spin push spec
 ```
 
+You can also specify line numbers when using RSpec:
+
+``` bash
+spin push spec/models/car.rb:123
+```
+
 If you experience issues with `test_helper.rb` not being available you may need to add your test directory to the load path using the `-I` option:
 
 ``` bash
