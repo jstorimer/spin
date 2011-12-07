@@ -14,7 +14,9 @@ require 'digest/md5'
 require 'benchmark'
 require 'optparse'
 
-
+# This class is responsible for handling a file specifier's various
+# representations. Currently it only accounts for a filename and a line number
+# filter (used by RSpec)
 class SpinFile
   attr_accessor :filename
   attr_accessor :line_filter
@@ -27,6 +29,8 @@ class SpinFile
     @line_filter = file_specifier.split(":")[1]
   end
 
+  # Would output spec/models/user.rb:123 if a line is specified when
+  # constructed
   def to_s
     @filename + (@line_filter ? ":#{@line_filter}" : "")
   end
