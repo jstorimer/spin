@@ -125,7 +125,7 @@ def serve(force_rspec, force_testunit, time, push_results)
     conn = socket.accept
     # This should be a list of relative paths to files.
     files = conn.gets.chomp
-    files = files.split(File::PATH_SEPARATOR)
+    files = files.split(SpinFile::PATH_SEPARATOR).map { |fs| SpinFile.new(fs) }
 
     # If spin is started with the time flag we will track total execution so
     # you can easily compare it with time rspec spec for example
@@ -179,10 +179,10 @@ def fork_and_run(files, push_results, test_framework)
     if test_framework == :rspec
       # We pretend the filepath came in as an argument and duplicate the
       # behaviour of the `rspec` binary.
-      ARGV.push files
+      ARGV.push files.map(&:to_s)
     else
       # We require the full path of the file here in the child process.
-      files.each { |f| require File.expand_path f }
+      files.each { |f| require File.expand_path f.filename }
     end
 
   end
@@ -193,14 +193,14 @@ end
 def push
   # The filenames that we will spin up to `spin serve` are passed in as
   # arguments.
-  files_to_load = ARGV
+  files_to_load = ARGV.map { |file_specifier| SpinFile.new(file_specifier) }
 
   # We reject anything in ARGV that isn't a file that exists. This takes
   # care of scripts that specify files like `spin push -r file.rb`. The `-r`
   # bit will just be ignored.
   #
   # We build a string like `file1.rb:file2.rb` and pass it up to the server.
-  f = files_to_load.select { |f| File.exist?(f) }.uniq.join(File::PATH_SEPARATOR)
+  f = files_to_load.select { |f| File.exist?(f.filename) }.uniq.join(SpinFile::PATH_SEPARATOR)
   abort if f.empty?
   puts "Spinning up #{f}"
 
