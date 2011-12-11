@@ -14,6 +14,8 @@ require 'digest/md5'
 require 'benchmark'
 require 'optparse'
 
+SEPARATOR = '|'
+
 def usage
   <<-USAGE
 Usage: spin serve
@@ -107,7 +109,7 @@ def serve(force_rspec, force_testunit, time, push_results)
     conn = socket.accept
     # This should be a list of relative paths to files.
     files = conn.gets.chomp
-    files = files.split(File::PATH_SEPARATOR)
+    files = files.split(SEPARATOR)
 
     # If spin is started with the time flag we will track total execution so
     # you can easily compare it with time rspec spec for example
@@ -181,8 +183,8 @@ def push
   # care of scripts that specify files like `spin push -r file.rb`. The `-r`
   # bit will just be ignored.
   #
-  # We build a string like `file1.rb:file2.rb` and pass it up to the server.
-  f = files_to_load.select { |f| File.exist?(f) }.uniq.join(File::PATH_SEPARATOR)
+  # We build a string like `file1.rb|file2.rb` and pass it up to the server.
+  f = files_to_load.select { |f| File.exist?(f.split(':')[0]) }.uniq.join(SEPARATOR)
   abort if f.empty?
   puts "Spinning up #{f}"
 
