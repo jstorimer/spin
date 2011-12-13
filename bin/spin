@@ -97,11 +97,15 @@ def serve(force_rspec, force_testunit, time, push_results)
 
   loop do
 
-    # Trap SIGQUIT (Ctrl+\) and re-run the last files that were pushed.
-    trap('QUIT') do
-      fork_and_run(@last_files_ran, push_results, test_framework)
-      # See WAIT below
-      Process.wait
+    # If we're not going to push the results,
+    # Trap SIGQUIT (Ctrl+\) and re-run the last files that were
+    # pushed.
+    if !push_results
+      trap('QUIT') do
+        fork_and_run(@last_files_ran, push_results, test_framework, nil)
+        # See WAIT below
+        Process.wait
+      end
     end
 
     # Since `spin push` reconnects each time it has new files for us we just
@@ -119,7 +123,7 @@ def serve(force_rspec, force_testunit, time, push_results)
     # it immediately.
     disconnect(conn) unless push_results
 
-    fork_and_run(files, push_results, test_framework)
+    fork_and_run(files, push_results, test_framework, conn)
 
     # WAIT: We don't want the parent process handling multiple test runs at the same
     # time because then we'd need to deal with multiple test databases, and
@@ -141,7 +145,7 @@ def serve(force_rspec, force_testunit, time, push_results)
   end
 end
 
-def fork_and_run(files, push_results, test_framework)
+def fork_and_run(files, push_results, test_framework, conn)
   # We fork(2) before loading the file so that our pristine preloaded
   # environment is untouched. The child process will load whatever code it
   # needs to, then it exits and we're back to the baseline preloaded app.
