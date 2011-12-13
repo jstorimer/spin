@@ -1,4 +1,9 @@
-## Versino 0.3.0 (Dec. 4, 2011)
+## Version 0.4.0 (Dec. 12, 2011)
+
+* Now supports line numbers for RSpec users. [Marek Prihoda]
+  spin push spec/models/user_spec.rb:25
+
+## Version 0.3.0 (Dec. 4, 2011)
 
 * Stream results back to the client when using --push-results [Ben Brinckerhoff]
 
