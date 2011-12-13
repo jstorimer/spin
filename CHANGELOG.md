@@ -1,4 +1,8 @@
-## Version 0.4.0 (Dec. 12, 2011)
+## Versions 0.4.1 (Dec 13, 2011)
+
+* Restores compat with kicker
+
+## Version 0.4.0 (Dec. 12, 2011) (yanked)
 
 * Now supports line numbers for RSpec users. [Marek Prihoda]
   spin push spec/models/user_spec.rb:25
