@@ -1,4 +1,8 @@
-## Versions 0.4.1 (Dec 13, 2011)
+## Versions 0.4.2 (Dec 14, 2011)
+
+* Fixes "undefined local variable or method 'conn'" bug [Ben Brinckerhoff 
+
+## Version 0.4.1 (Dec 13, 2011)
 
 * Restores compat with kicker
 
