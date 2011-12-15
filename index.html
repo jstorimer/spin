@@ -220,11 +220,14 @@ or else default to checking for defined constants.</p>
         <div class="pilwrap">
           <a class="pilcrow" href="#section-13">&#182;</a>
         </div>
-        <p>Trap SIGQUIT (Ctrl+) and re-run the last files that were pushed.</p>
+        <p>If we&rsquo;re not going to push the results,
+Trap SIGQUIT (Ctrl+) and re-run the last files that were
+pushed.</p>
       </td>
       <td class=code>
-        <div class='highlight'><pre>    <span class="nb">trap</span><span class="p">(</span><span class="s1">&#39;QUIT&#39;</span><span class="p">)</span> <span class="k">do</span>
-      <span class="n">fork_and_run</span><span class="p">(</span><span class="vi">@last_files_ran</span><span class="p">,</span> <span class="n">push_results</span><span class="p">,</span> <span class="n">test_framework</span><span class="p">)</span></pre></div>
+        <div class='highlight'><pre>    <span class="k">if</span> <span class="o">!</span><span class="n">push_results</span>
+      <span class="nb">trap</span><span class="p">(</span><span class="s1">&#39;QUIT&#39;</span><span class="p">)</span> <span class="k">do</span>
+        <span class="n">fork_and_run</span><span class="p">(</span><span class="vi">@last_files_ran</span><span class="p">,</span> <span class="n">push_results</span><span class="p">,</span> <span class="n">test_framework</span><span class="p">,</span> <span class="kp">nil</span><span class="p">)</span></pre></div>
       </td>
     </tr>
     <tr id='section-14'>
@@ -235,7 +238,8 @@ or else default to checking for defined constants.</p>
         <p>See WAIT below</p>
       </td>
       <td class=code>
-        <div class='highlight'><pre>      <span class="no">Process</span><span class="o">.</span><span class="n">wait</span>
+        <div class='highlight'><pre>        <span class="no">Process</span><span class="o">.</span><span class="n">wait</span>
+      <span class="k">end</span>
     <span class="k">end</span></pre></div>
       </td>
     </tr>
@@ -286,7 +290,7 @@ it immediately.</p>
       <td class=code>
         <div class='highlight'><pre>    <span class="n">disconnect</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span> <span class="k">unless</span> <span class="n">push_results</span>
 
-    <span class="n">fork_and_run</span><span class="p">(</span><span class="n">files</span><span class="p">,</span> <span class="n">push_results</span><span class="p">,</span> <span class="n">test_framework</span><span class="p">)</span></pre></div>
+    <span class="n">fork_and_run</span><span class="p">(</span><span class="n">files</span><span class="p">,</span> <span class="n">push_results</span><span class="p">,</span> <span class="n">test_framework</span><span class="p">,</span> <span class="n">conn</span><span class="p">)</span></pre></div>
       </td>
     </tr>
     <tr id='section-19'>
@@ -341,7 +345,7 @@ now disconnect it.</p>
   <span class="k">end</span>
 <span class="k">end</span>
 
-<span class="k">def</span> <span class="nf">fork_and_run</span><span class="p">(</span><span class="n">files</span><span class="p">,</span> <span class="n">push_results</span><span class="p">,</span> <span class="n">test_framework</span><span class="p">)</span></pre></div>
+<span class="k">def</span> <span class="nf">fork_and_run</span><span class="p">(</span><span class="n">files</span><span class="p">,</span> <span class="n">push_results</span><span class="p">,</span> <span class="n">test_framework</span><span class="p">,</span> <span class="n">conn</span><span class="p">)</span></pre></div>
       </td>
     </tr>
     <tr id='section-23'>
