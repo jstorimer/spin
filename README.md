@@ -23,13 +23,23 @@ Spin is a tool for Rails 3 apps. It is compatible with the following testing lib
 Usage
 =====
 
-There are two components to Spin, a server and client. The server has to be running for anything interesting to happen. You can start the Spin server from your `Rails.root` with the following command:
+Use spin with a single command:
 
 ``` bash
-spin serve
+spin
 ```
 
-As soon as the server is running it will be ready to accept from clients. You can use the following command to specify a file for the server to load:
+That will start watching your files and run tests when there are changes. 
+
+TODO
+====
+
+* Maintain backwards compat with a spin-push script. 
+* What about --push-results? Each test process can get a pipe and it can be connected to the spin-push pipe?
+* Add other rails paths to watch
+* dev env with hoe
+* ship it!
+
 
 ``` bash
 spin push test/unit/product_test.rb

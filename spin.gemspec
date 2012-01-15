@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = "spin"
-  s.version     = '0.4.2'
+  s.version     = '0.5.0.pre'
   s.authors     = ["Jesse Storimer"]
   s.email       = ["jstorimer@gmail.com"]
   s.homepage    = "http://jstorimer.github.com/spin"
@@ -10,4 +10,7 @@ Gem::Specification.new do |s|
 By preloading your Rails environment for testing you don't load the same code over and over and over... Spin works best for an autotest(ish) workflow.}
 
   s.executables   = ['spin']
+
+  s.add_runtime_dependency 'fssm'
+  s.add_development_dependency 'hoe'
 end
