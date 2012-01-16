@@ -12,5 +12,4 @@ By preloading your Rails environment for testing you don't load the same code ov
   s.executables   = ['spin']
 
   s.add_runtime_dependency 'fssm'
-  s.add_development_dependency 'hoe'
 end
