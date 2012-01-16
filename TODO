@@ -1,0 +1,18 @@
+[ ] Move code into lib/
+[ ] Restore rspec compat
+[ ] Switch to watchr
+[ ] Update README
+[ ] Allow custom preloading in a .spin
+[ ] Allow custom watch behaviour in a .spin
+
+preload do
+  require 'config/application'
+  require 'other_lib'
+end
+
+watch('lib/.*\.rb') { 'test/foo_test.rb' }
+
+[ ] Maintain spin-push behaviour
+[ ] What about --push-results?
+[ ] Add Rails2 compat if it's not too hard
+
