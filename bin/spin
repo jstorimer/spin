@@ -18,8 +18,6 @@ def main
   require File.expand_path 'config/application'
   puts 'loaded rails...'
 
-  sizeof_int = [42].pack('I').size
-
   @has_forked = false
   @file_queue = Set.new
 
@@ -31,9 +29,7 @@ def main
       end
     end
 
-    data = rd.read(sizeof_int)
-    size = data.unpack('I').first
-    filepath = rd.read size
+    filepath = rd.gets.chomp
 
     @file_queue << filepath
 
@@ -78,7 +74,7 @@ def start_watcher(wr)
     path 'test/' do
       update { |base, relative|
         full_path = [base, relative].join('/')
-        wr.write([full_path.size].pack('I')) + wr.write(full_path)
+        wr.puts(full_path)
       }
     end
   end
