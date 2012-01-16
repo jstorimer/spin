@@ -1,6 +1,5 @@
 [ ] Move code into lib/
 [ ] Restore rspec compat
-[ ] Switch to watchr
 [ ] Update README
 [ ] Allow custom preloading in a .spin
 [ ] Allow custom watch behaviour in a .spin
