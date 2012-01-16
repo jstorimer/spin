@@ -1,4 +1,5 @@
 [ ] Move code into lib/
+[ ] Add the rest of the Rails autotesting rules
 [ ] Restore rspec compat
 [ ] Update README
 [ ] Allow custom preloading in a .spin
