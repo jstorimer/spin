@@ -1,10 +1,7 @@
 Spin
 ====
 
-Spin speeds up your Rails testing workflow.
-
-By preloading your Rails environment in one process and then using fork(2) for each test run you don't load the same code over and over and over...
-Spin works with an autotest(ish) workflow.
+Spin is dead simple to use and makes autotesting with Rails faster.
 
 Installation
 ===========
@@ -23,23 +20,19 @@ Spin is a tool for Rails 3 apps. It is compatible with the following testing lib
 Usage
 =====
 
-Use spin with a single command:
+Start up `spin` the same way you would `autotest`, with a single command:
 
 ``` bash
 spin
 ```
 
-That will start watching your files and run tests when there are changes. 
+Under the hood that fires up two processes, one to watch files and one to preload your Rails env. Each test run involves forking a child process off of the master. So each time you skip the cost of loading gems, rails, and the basic initialization.
 
-TODO
-====
+## Batched Testing
 
-* Maintain backwards compat with a spin-push script. 
-* What about --push-results? Each test process can get a pipe and it can be connected to the spin-push pipe?
-* Add other rails paths to watch
-* dev env with hoe
-* ship it!
+## Always Listening
 
+## Backwards Compat
 
 ``` bash
 spin push test/unit/product_test.rb
@@ -51,43 +44,19 @@ Or push multiple files to be loaded at once:
 spin push test/unit/product_test.rb test/unit/shop_test.rb test/unit/cart_test.rb
 ```
 
-Or, when using RSpec, run the whole suite:
-
-``` bash
-spin push spec
-```
-
 Running a single RSpec example by adding a line number is also possible, e.g:
 
 ``` bash
 spin push spec/models/user_spec.rb:14
 ```
 
-If you experience issues with `test_helper.rb` not being available you may need to add your test directory to the load path using the `-I` option:
-
-``` bash
-spin serve -Itest
-```
-
 Send a SIGQUIT to spin serve (`Ctrl+\`) if you want to re-run the last files that were ran via `spin push [files]`.
 
-### With Kicker
+Custom Paths
+============
 
-As mentioned, this tool works best with an autotest(ish) workflow. I haven't actually used with with `autotest` itself, but it works great with [kicker](http://github.com/alloy/kicker). Here's the suggested workflow for a Rails app:
-
-1. Start up the spin server
-
-    ``` bash
-    spin serve
-    ```
-
-2. Start up `kicker` using the custom binary option (and any other options you want)
-
-    ``` bash
-    kicker -r rails -b 'spin push'
-    ```
-
-3. Faster testing workflow!
+Custom Preloading
+=================
 
 Motivation
 ==========
@@ -133,6 +102,9 @@ Hacking
 =======
 
 I take pull requests, and it's commit bit, and there are no tests.
+
+Architecture
+============
 
 Related Projects
 ===============
