@@ -1,84 +1,60 @@
 #!/usr/bin/env ruby
 
+require 'spin/watcher'
+require 'spin/preloader'
 require 'set'
 $LOAD_PATH << 'test'
 ENV['RAILS_ENV'] = 'test'
 
 def main
-  # pipe for communication between watcher proc and master proc
-  rd, wr = IO.pipe
-
-  # pass the write end of the pipe to the watcher proc
-  @watcher_pid = fork { start_watcher(wr) }
-
-  # the master doesn't need to write to the pipe so it closes that end
-  wr.close
-
-  # load rails
-  require File.expand_path 'config/application'
-  puts 'loaded rails...'
-
-  @has_forked = false
-  @file_queue = Set.new
-
+  @read_pipe, @write_pipe = IO.pipe
+  
+  Spin::Watcher.spawn(@write_pipe)
+  @write_pipe.close
+  Spin::Preloader.preload
+  
+  timeout = 1
+  
   loop do
-
-    while !IO.select([rd], nil, nil, 1)
-      if !@has_forked && !@file_queue.empty?
+    while !IO.select([@read_pipe], nil, nil, timeout)
+      unless has_forked? || file_queue.empty?
         run_tests
       end
     end
-
-    filepath = rd.gets.chomp
-
-    @file_queue << filepath
-
-    if !@has_forked
+    
+    test_file_to_load = @read_pipe.gets.chomp
+    file_queue << test_file_to_load
+    
+    unless has_forked?
       run_tests
     end
   end
 end
 
+def has_forked?; @has_forked ||= false; end
+def file_queue; @file_queue ||= Set.new; end
+
 def run_tests
-  tests_to_run = @file_queue.to_a
+  tests_to_run = file_queue.to_a
   puts "running tests: #{tests_to_run}"
 
-  @test_start = Time.now
   fork { 
-    tests_to_run.each do |path|
-      require path
-    end
+    tests_to_run.each { |path| require path }
   }
 
-  @file_queue.clear
+  file_queue.clear
   @has_forked = true
 end
 
 trap(:CHLD) {
   while pid = Process.wait(-1, Process::WNOHANG) do
     # abort if the watcher proc dies unexpectedly
-    if pid == @watcher_pid 
+    if pid == Spin::Watcher.pid
       abort("Watcher process exited unexpectedly")
     else
       @has_forked = false
-      puts
-      puts "Time taken for tests: #{Time.now - @test_start}s"
     end
   end
 }
 
-def start_watcher(wr)
-  require 'rubygems'
-  require 'fssm'
-  FSSM.monitor do
-    path 'test/' do
-      update { |base, relative|
-        full_path = [base, relative].join('/')
-        wr.puts(full_path)
-      }
-    end
-  end
-end
-
 exit main
-
