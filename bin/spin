@@ -1,49 +1,31 @@
 #!/usr/bin/env ruby
 
-require 'spin/watcher'
-require 'spin/preloader'
-require 'set'
-$LOAD_PATH << 'test'
-ENV['RAILS_ENV'] = 'test'
+require 'spin'
 
 def main
-  @read_pipe, @write_pipe = IO.pipe
+  $LOAD_PATH << 'test'
+  ENV['RAILS_ENV'] = 'test'
   
+  # parse_config
+  # trap_signals
+  
+  @read_pipe, @write_pipe = IO.pipe
   Spin::Watcher.spawn(@write_pipe)
   @write_pipe.close
   Spin::Preloader.preload
   
-  timeout = 1
+  timeout = 0.5
+  @path_collection = Spin::PathCollection.new
   
   loop do
-    while !IO.select([@read_pipe], nil, nil, timeout)
-      unless has_forked? || file_queue.empty?
-        run_tests
-      end
+    if IO.select([@read_pipe], nil, nil, timeout)
+      @path_collection.add @read_pipe.gets.chomp
     end
     
-    test_file_to_load = @read_pipe.gets.chomp
-    file_queue << test_file_to_load
-    
-    unless has_forked?
-      run_tests
+    if Spin::TestRunner.idle? && @path_collection.pending?
+      Spin::TestRunner.run(@path_collection)
     end
   end
-end
-
-def has_forked?; @has_forked ||= false; end
-def file_queue; @file_queue ||= Set.new; end
-
-def run_tests
-  tests_to_run = file_queue.to_a
-  puts "running tests: #{tests_to_run}"
-
-  fork { 
-    tests_to_run.each { |path| require path }
-  }
-
-  file_queue.clear
-  @has_forked = true
 end
 
 trap(:CHLD) {
@@ -51,10 +33,14 @@ trap(:CHLD) {
     # abort if the watcher proc dies unexpectedly
     if pid == Spin::Watcher.pid
       abort("Watcher process exited unexpectedly")
+    elsif pid == Spin::TestRunner.pid
+      Spin::TestRunner.running = false
     else
-      @has_forked = false
+      abort("WTF did this process come from?")
     end
   end
 }
+
+trap(:INT) { exit }
 
 exit main
