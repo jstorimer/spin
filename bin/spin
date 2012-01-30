@@ -84,6 +84,13 @@ def serve(force_rspec, force_testunit, time, push_results)
       begin
         require 'rspec/rails'
         require 'rspec/autorun'
+
+        # Tell RSpec it's running with a tty to allow colored output
+        if defined?(RSpec) && RSpec.respond_to?(:configure)
+          RSpec.configure do |c|
+            c.tty = true if c.respond_to?(:tty=)
+          end
+        end
       rescue LoadError
       end if test_framework == :rspec
     }
