@@ -41,6 +41,12 @@ Or push multiple files to be loaded at once:
 spin push test/unit/product_test.rb test/unit/shop_test.rb test/unit/cart_test.rb
 ```
 
+Or push selected test by name (executed as -n '/test_newproduct/')
+
+``` bash
+spin push test/unit/product_test.rb:test_newproduct
+```
+
 Or, when using RSpec, run the whole suite:
 
 ``` bash

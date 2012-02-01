@@ -177,7 +177,15 @@ def fork_and_run(files, push_results, test_framework, conn)
       ARGV.push files
     else
       # We require the full path of the file here in the child process.
-      files.each { |f| require File.expand_path f }
+      # Run only selected test by name.
+      # Add -n with all given names as Regexp eg. /name1|name2|name3/
+      names = "/#{files.map{|f|f.split(':')[1]}.reject(&:nil?).join('|')}/"
+      unless names == '//'
+        ARGV << '-n'
+        ARGV << names
+        puts "Test names: #{names}"
+      end
+      files.each { |f| require File.expand_path f.split(':')[0] }
     end
 
   end
