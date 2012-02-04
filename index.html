@@ -191,16 +191,31 @@ or else default to checking for defined constants.</p>
       <td class=code>
         <div class='highlight'><pre>      <span class="k">begin</span>
         <span class="nb">require</span> <span class="s1">&#39;rspec/rails&#39;</span>
-        <span class="nb">require</span> <span class="s1">&#39;rspec/autorun&#39;</span>
-      <span class="k">rescue</span> <span class="no">LoadError</span>
-      <span class="k">end</span> <span class="k">if</span> <span class="n">test_framework</span> <span class="o">==</span> <span class="ss">:rspec</span>
-    <span class="p">}</span></pre></div>
+        <span class="nb">require</span> <span class="s1">&#39;rspec/autorun&#39;</span></pre></div>
       </td>
     </tr>
     <tr id='section-12'>
       <td class=docs>
         <div class="pilwrap">
           <a class="pilcrow" href="#section-12">&#182;</a>
+        </div>
+        <p>Tell RSpec it&rsquo;s running with a tty to allow colored output</p>
+      </td>
+      <td class=code>
+        <div class='highlight'><pre>        <span class="k">if</span> <span class="no">RSpec</span><span class="o">.</span><span class="n">respond_to?</span><span class="p">(</span><span class="ss">:configure</span><span class="p">)</span>
+          <span class="no">RSpec</span><span class="o">.</span><span class="n">configure</span> <span class="k">do</span> <span class="o">|</span><span class="n">c</span><span class="o">|</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">tty</span> <span class="o">=</span> <span class="kp">true</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">respond_to?</span><span class="p">(</span><span class="ss">:tty</span><span class="o">=</span><span class="p">)</span>
+          <span class="k">end</span>
+        <span class="k">end</span>
+      <span class="k">rescue</span> <span class="no">LoadError</span>
+      <span class="k">end</span> <span class="k">if</span> <span class="n">test_framework</span> <span class="o">==</span> <span class="ss">:rspec</span>
+    <span class="p">}</span></pre></div>
+      </td>
+    </tr>
+    <tr id='section-13'>
+      <td class=docs>
+        <div class="pilwrap">
+          <a class="pilcrow" href="#section-13">&#182;</a>
         </div>
         <p>This is the amount of time that you&rsquo;ll save on each subsequent test run.</p>
       </td>
@@ -215,10 +230,10 @@ or else default to checking for defined constants.</p>
   <span class="kp">loop</span> <span class="k">do</span></pre></div>
       </td>
     </tr>
-    <tr id='section-13'>
+    <tr id='section-14'>
       <td class=docs>
         <div class="pilwrap">
-          <a class="pilcrow" href="#section-13">&#182;</a>
+          <a class="pilcrow" href="#section-14">&#182;</a>
         </div>
         <p>If we&rsquo;re not going to push the results,
 Trap SIGQUIT (Ctrl+) and re-run the last files that were
@@ -230,10 +245,10 @@ pushed.</p>
         <span class="n">fork_and_run</span><span class="p">(</span><span class="vi">@last_files_ran</span><span class="p">,</span> <span class="n">push_results</span><span class="p">,</span> <span class="n">test_framework</span><span class="p">,</span> <span class="kp">nil</span><span class="p">)</span></pre></div>
       </td>
     </tr>
-    <tr id='section-14'>
+    <tr id='section-15'>
       <td class=docs>
         <div class="pilwrap">
-          <a class="pilcrow" href="#section-14">&#182;</a>
+          <a class="pilcrow" href="#section-15">&#182;</a>
         </div>
         <p>See WAIT below</p>
       </td>
@@ -243,10 +258,10 @@ pushed.</p>
     <span class="k">end</span></pre></div>
       </td>
     </tr>
-    <tr id='section-15'>
+    <tr id='section-16'>
       <td class=docs>
         <div class="pilwrap">
-          <a class="pilcrow" href="#section-15">&#182;</a>
+          <a class="pilcrow" href="#section-16">&#182;</a>
         </div>
         <p>Since <code>spin push</code> reconnects each time it has new files for us we just
 need to accept(2) connections from it.</p>
@@ -255,10 +270,10 @@ need to accept(2) connections from it.</p>
         <div class='highlight'><pre>    <span class="n">conn</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">accept</span></pre></div>
       </td>
     </tr>
-    <tr id='section-16'>
+    <tr id='section-17'>
       <td class=docs>
         <div class="pilwrap">
-          <a class="pilcrow" href="#section-16">&#182;</a>
+          <a class="pilcrow" href="#section-17">&#182;</a>
         </div>
         <p>This should be a list of relative paths to files.</p>
       </td>
@@ -267,10 +282,10 @@ need to accept(2) connections from it.</p>
     <span class="n">files</span> <span class="o">=</span> <span class="n">files</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="no">SEPARATOR</span><span class="p">)</span></pre></div>
       </td>
     </tr>
-    <tr id='section-17'>
+    <tr id='section-18'>
       <td class=docs>
         <div class="pilwrap">
-          <a class="pilcrow" href="#section-17">&#182;</a>
+          <a class="pilcrow" href="#section-18">&#182;</a>
         </div>
         <p>If spin is started with the time flag we will track total execution so
 you can easily compare it with time rspec spec for example</p>
@@ -279,10 +294,10 @@ you can easily compare it with time rspec spec for example</p>
         <div class='highlight'><pre>    <span class="n">start</span> <span class="o">=</span> <span class="no">Time</span><span class="o">.</span><span class="n">now</span> <span class="k">if</span> <span class="n">time</span></pre></div>
       </td>
     </tr>
-    <tr id='section-18'>
+    <tr id='section-19'>
       <td class=docs>
         <div class="pilwrap">
-          <a class="pilcrow" href="#section-18">&#182;</a>
+          <a class="pilcrow" href="#section-19">&#182;</a>
         </div>
         <p>If we&rsquo;re not sending results back to the push process, we can disconnect
 it immediately.</p>
@@ -293,10 +308,10 @@ it immediately.</p>
     <span class="n">fork_and_run</span><span class="p">(</span><span class="n">files</span><span class="p">,</span> <span class="n">push_results</span><span class="p">,</span> <span class="n">test_framework</span><span class="p">,</span> <span class="n">conn</span><span class="p">)</span></pre></div>
       </td>
     </tr>
-    <tr id='section-19'>
+    <tr id='section-20'>
       <td class=docs>
         <div class="pilwrap">
-          <a class="pilcrow" href="#section-19">&#182;</a>
+          <a class="pilcrow" href="#section-20">&#182;</a>
         </div>
         <p>WAIT: We don&rsquo;t want the parent process handling multiple test runs at the same
 time because then we&rsquo;d need to deal with multiple test databases, and
@@ -307,10 +322,10 @@ child process has finished running the test.</p>
         <div class='highlight'><pre>    <span class="no">Process</span><span class="o">.</span><span class="n">wait</span></pre></div>
       </td>
     </tr>
-    <tr id='section-20'>
+    <tr id='section-21'>
       <td class=docs>
         <div class="pilwrap">
-          <a class="pilcrow" href="#section-20">&#182;</a>
+          <a class="pilcrow" href="#section-21">&#182;</a>
         </div>
         <p>If we are tracking time we will output it here after everything has
 finished running</p>
@@ -319,10 +334,10 @@ finished running</p>
         <div class='highlight'><pre>    <span class="nb">puts</span> <span class="s2">&quot;Total execution time was </span><span class="si">#{</span><span class="no">Time</span><span class="o">.</span><span class="n">now</span> <span class="o">-</span> <span class="n">start</span><span class="si">}</span><span class="s2"> seconds&quot;</span> <span class="k">if</span> <span class="n">start</span></pre></div>
       </td>
     </tr>
-    <tr id='section-21'>
+    <tr id='section-22'>
       <td class=docs>
         <div class="pilwrap">
-          <a class="pilcrow" href="#section-21">&#182;</a>
+          <a class="pilcrow" href="#section-22">&#182;</a>
         </div>
         <p>Tests have now run. If we were pushing results to a push process, we can
 now disconnect it.</p>
@@ -333,10 +348,10 @@ now disconnect it.</p>
     <span class="k">rescue</span> <span class="no">Errno</span><span class="o">::</span><span class="no">EPIPE</span></pre></div>
       </td>
     </tr>
-    <tr id='section-22'>
+    <tr id='section-23'>
       <td class=docs>
         <div class="pilwrap">
-          <a class="pilcrow" href="#section-22">&#182;</a>
+          <a class="pilcrow" href="#section-23">&#182;</a>
         </div>
         <p>Don&rsquo;t abort if the client already disconnected</p>
       </td>
@@ -348,10 +363,10 @@ now disconnect it.</p>
 <span class="k">def</span> <span class="nf">fork_and_run</span><span class="p">(</span><span class="n">files</span><span class="p">,</span> <span class="n">push_results</span><span class="p">,</span> <span class="n">test_framework</span><span class="p">,</span> <span class="n">conn</span><span class="p">)</span></pre></div>
       </td>
     </tr>
-    <tr id='section-23'>
+    <tr id='section-24'>
       <td class=docs>
         <div class="pilwrap">
-          <a class="pilcrow" href="#section-23">&#182;</a>
+          <a class="pilcrow" href="#section-24">&#182;</a>
         </div>
         <p>We fork(2) before loading the file so that our pristine preloaded
 environment is untouched. The child process will load whatever code it
@@ -361,10 +376,10 @@ needs to, then it exits and we&rsquo;re back to the baseline preloaded app.</p>
         <div class='highlight'><pre>  <span class="nb">fork</span> <span class="k">do</span></pre></div>
       </td>
     </tr>
-    <tr id='section-24'>
+    <tr id='section-25'>
       <td class=docs>
         <div class="pilwrap">
-          <a class="pilcrow" href="#section-24">&#182;</a>
+          <a class="pilcrow" href="#section-25">&#182;</a>
         </div>
         <p>To push the test results to the push process instead of having them
 displayed by the server, we reopen $stdout/$stderr to the open
@@ -380,10 +395,10 @@ connection.</p>
     <span class="nb">puts</span> <span class="s2">&quot;Loading </span><span class="si">#{</span><span class="n">files</span><span class="o">.</span><span class="n">inspect</span><span class="si">}</span><span class="s2">&quot;</span></pre></div>
       </td>
     </tr>
-    <tr id='section-25'>
+    <tr id='section-26'>
       <td class=docs>
         <div class="pilwrap">
-          <a class="pilcrow" href="#section-25">&#182;</a>
+          <a class="pilcrow" href="#section-26">&#182;</a>
         </div>
         <p>Unfortunately rspec&rsquo;s interface isn&rsquo;t as simple as just requiring the
 test file that you want to run (suddenly test/unit seems like the less
@@ -393,10 +408,10 @@ crazy one!).</p>
         <div class='highlight'><pre>    <span class="k">if</span> <span class="n">test_framework</span> <span class="o">==</span> <span class="ss">:rspec</span></pre></div>
       </td>
     </tr>
-    <tr id='section-26'>
+    <tr id='section-27'>
       <td class=docs>
         <div class="pilwrap">
-          <a class="pilcrow" href="#section-26">&#182;</a>
+          <a class="pilcrow" href="#section-27">&#182;</a>
         </div>
         <p>We pretend the filepath came in as an argument and duplicate the
 behaviour of the <code>rspec</code> binary.</p>
@@ -406,10 +421,10 @@ behaviour of the <code>rspec</code> binary.</p>
     <span class="k">else</span></pre></div>
       </td>
     </tr>
-    <tr id='section-27'>
+    <tr id='section-28'>
       <td class=docs>
         <div class="pilwrap">
-          <a class="pilcrow" href="#section-27">&#182;</a>
+          <a class="pilcrow" href="#section-28">&#182;</a>
         </div>
         <p>We require the full path of the file here in the child process.</p>
       </td>
@@ -433,10 +448,10 @@ behaviour of the <code>rspec</code> binary.</p>
         <div class='highlight'><pre><span class="k">def</span> <span class="nf">push</span></pre></div>
       </td>
     </tr>
-    <tr id='section-29'>
+    <tr id='section-30'>
       <td class=docs>
         <div class="pilwrap">
-          <a class="pilcrow" href="#section-29">&#182;</a>
+          <a class="pilcrow" href="#section-30">&#182;</a>
         </div>
         <p>The filenames that we will spin up to <code>spin serve</code> are passed in as
 arguments.</p>
@@ -445,10 +460,10 @@ arguments.</p>
         <div class='highlight'><pre>  <span class="n">files_to_load</span> <span class="o">=</span> <span class="no">ARGV</span></pre></div>
       </td>
     </tr>
-    <tr id='section-30'>
+    <tr id='section-31'>
       <td class=docs>
         <div class="pilwrap">
-          <a class="pilcrow" href="#section-30">&#182;</a>
+          <a class="pilcrow" href="#section-31">&#182;</a>
         </div>
         <p>We reject anything in ARGV that isn&rsquo;t a file that exists. This takes
 care of scripts that specify files like <code>spin push -r file.rb</code>. The <code>-r</code>
@@ -462,10 +477,10 @@ bit will just be ignored.</p>
   <span class="nb">puts</span> <span class="s2">&quot;Spinning up </span><span class="si">#{</span><span class="n">f</span><span class="si">}</span><span class="s2">&quot;</span></pre></div>
       </td>
     </tr>
-    <tr id='section-31'>
+    <tr id='section-32'>
       <td class=docs>
         <div class="pilwrap">
-          <a class="pilcrow" href="#section-31">&#182;</a>
+          <a class="pilcrow" href="#section-32">&#182;</a>
         </div>
         <p>This is the other end of the socket that <code>spin serve</code> opens. At this point
 <code>spin serve</code> will accept(2) our connection.</p>
@@ -474,10 +489,10 @@ bit will just be ignored.</p>
         <div class='highlight'><pre>  <span class="n">socket</span> <span class="o">=</span> <span class="no">UNIXSocket</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">socket_file</span><span class="p">)</span></pre></div>
       </td>
     </tr>
-    <tr id='section-32'>
+    <tr id='section-33'>
       <td class=docs>
         <div class="pilwrap">
-          <a class="pilcrow" href="#section-32">&#182;</a>
+          <a class="pilcrow" href="#section-33">&#182;</a>
         </div>
         <p>We put the filenames on the socket for the server to read and then load.</p>
 
