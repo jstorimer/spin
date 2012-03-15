@@ -1,3 +1,7 @@
+## Version 0.4.5 (Mar 14, 2012)
+
+* Fix issues with nil values from v0.4.4 release
+
 ## Version 0.4.4 (Mar 14, 2012)
 
 * Refactor spin-push to support kicker-2.5.0 [Vivek Khokhar]
