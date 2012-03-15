@@ -1,3 +1,7 @@
+## Version 0.4.4 (Mar 14, 2012)
+
+* Refactor spin-push to support kicker-2.5.0 [Vivek Khokhar]
+
 ## Version 0.4.3 (Feb 4, 2012)
 
 * Fixes colored output for Rspec users [Brian Helmkamp]
