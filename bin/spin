@@ -196,7 +196,7 @@ def push
   #
   # We build a string like `file1.rb|file2.rb` and pass it up to the server.
   f = files_to_load.map do |file|
-    file = file.split(':').first
+    file = file.split(':').first.to_s
 
     # If the file exists then we can push it up just like it is
     if File.exist?(file)
@@ -204,7 +204,7 @@ def push
     # kicker-2.5.0 now gives us file names without extensions, so we have to try adding it
     elsif File.extname(file).empty?
       file = [file, 'rb'].join('.')
-      File.exist?(file) && file
+      file if File.exist?(file)
     end  
   end.compact.uniq.join(SEPARATOR)
 
