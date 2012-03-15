@@ -1,4 +1,8 @@
-## Versions 0.4.2 (Dec 14, 2011)
+## Version 0.4.3 (Feb 4, 2012)
+
+* Fixes colored output for Rspec users [Brian Helmkamp]
+
+## Version 0.4.2 (Dec 14, 2011)
 
 * Fixes "undefined local variable or method 'conn'" bug [Ben Brinckerhoff 
 
