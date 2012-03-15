@@ -32,7 +32,7 @@
         <div class="pilwrap">
           <a class="pilcrow" href="#section-2">&#182;</a>
         </div>
-        <p>Spin preloads your Rails environment for testing, so you don&rsquo;t load the same code over and over and over&hellip; Spin works best with an autotest(ish) workflow.</p>
+        <p>Spin preloads your Rails environment for testing, so you don&#39;t load the same code over and over and over... Spin works best with an autotest(ish) workflow.</p>
       </td>
       <td class=code>
         <div class='highlight'><pre><span class="nb">require</span> <span class="s1">&#39;socket&#39;</span></pre></div>
@@ -66,7 +66,7 @@ without having to worry about subdirectories, special chars, etc.</p>
         <div class="pilwrap">
           <a class="pilcrow" href="#section-5">&#182;</a>
         </div>
-        <p>So we can tell users how much time they&rsquo;re saving by preloading their
+        <p>So we can tell users how much time they&#39;re saving by preloading their
 environment.</p>
       </td>
       <td class=code>
@@ -156,14 +156,14 @@ old run of <code>spin serve</code> and can be cleaned up.</p>
         </div>
         <p>We require config/application because that file (typically) loads Rails
 and any Bundler deps, as well as loading the initialization code for
-the app, but it doesn&rsquo;t actually perform the initialization. That happens
+the app, but it doesn&#39;t actually perform the initialization. That happens
 in config/environment.</p>
 
-<p>In my experience that&rsquo;s the best we can do in terms of preloading. Rails
-and the gem dependencies rarely change and so don&rsquo;t need to be reloaded.
-But you can&rsquo;t initialize the application because any non-trivial app will
-involve it&rsquo;s models/controllers, etc. in its initialization, which you
-definitely don&rsquo;t want to preload.</p>
+<p>In my experience that&#39;s the best we can do in terms of preloading. Rails
+and the gem dependencies rarely change and so don&#39;t need to be reloaded.
+But you can&#39;t initialize the application because any non-trivial app will
+involve it&#39;s models/controllers, etc. in its initialization, which you
+definitely don&#39;t want to preload.</p>
       </td>
       <td class=code>
         <div class='highlight'><pre>      <span class="nb">require</span> <span class="no">File</span><span class="o">.</span><span class="n">expand_path</span> <span class="s1">&#39;config/application&#39;</span></pre></div>
@@ -174,7 +174,7 @@ definitely don&rsquo;t want to preload.</p>
         <div class="pilwrap">
           <a class="pilcrow" href="#section-10">&#182;</a>
         </div>
-        <p>Determine the test framework to use using the passed-in &lsquo;force&rsquo; options
+        <p>Determine the test framework to use using the passed-in &#39;force&#39; options
 or else default to checking for defined constants.</p>
       </td>
       <td class=code>
@@ -199,7 +199,7 @@ or else default to checking for defined constants.</p>
         <div class="pilwrap">
           <a class="pilcrow" href="#section-12">&#182;</a>
         </div>
-        <p>Tell RSpec it&rsquo;s running with a tty to allow colored output</p>
+        <p>Tell RSpec it&#39;s running with a tty to allow colored output</p>
       </td>
       <td class=code>
         <div class='highlight'><pre>        <span class="k">if</span> <span class="no">RSpec</span><span class="o">.</span><span class="n">respond_to?</span><span class="p">(</span><span class="ss">:configure</span><span class="p">)</span>
@@ -217,7 +217,7 @@ or else default to checking for defined constants.</p>
         <div class="pilwrap">
           <a class="pilcrow" href="#section-13">&#182;</a>
         </div>
-        <p>This is the amount of time that you&rsquo;ll save on each subsequent test run.</p>
+        <p>This is the amount of time that you&#39;ll save on each subsequent test run.</p>
       </td>
       <td class=code>
         <div class='highlight'><pre>    <span class="nb">puts</span> <span class="s2">&quot;Preloaded Rails env in </span><span class="si">#{</span><span class="n">sec</span><span class="si">}</span><span class="s2">s...&quot;</span>
@@ -235,7 +235,7 @@ or else default to checking for defined constants.</p>
         <div class="pilwrap">
           <a class="pilcrow" href="#section-14">&#182;</a>
         </div>
-        <p>If we&rsquo;re not going to push the results,
+        <p>If we&#39;re not going to push the results,
 Trap SIGQUIT (Ctrl+) and re-run the last files that were
 pushed.</p>
       </td>
@@ -299,7 +299,7 @@ you can easily compare it with time rspec spec for example</p>
         <div class="pilwrap">
           <a class="pilcrow" href="#section-19">&#182;</a>
         </div>
-        <p>If we&rsquo;re not sending results back to the push process, we can disconnect
+        <p>If we&#39;re not sending results back to the push process, we can disconnect
 it immediately.</p>
       </td>
       <td class=code>
@@ -313,8 +313,8 @@ it immediately.</p>
         <div class="pilwrap">
           <a class="pilcrow" href="#section-20">&#182;</a>
         </div>
-        <p>WAIT: We don&rsquo;t want the parent process handling multiple test runs at the same
-time because then we&rsquo;d need to deal with multiple test databases, and
+        <p>WAIT: We don&#39;t want the parent process handling multiple test runs at the same
+time because then we&#39;d need to deal with multiple test databases, and
 that destroys the idea of being simple to use. So we wait(2) until the
 child process has finished running the test.</p>
       </td>
@@ -353,7 +353,7 @@ now disconnect it.</p>
         <div class="pilwrap">
           <a class="pilcrow" href="#section-23">&#182;</a>
         </div>
-        <p>Don&rsquo;t abort if the client already disconnected</p>
+        <p>Don&#39;t abort if the client already disconnected</p>
       </td>
       <td class=code>
         <div class='highlight'><pre>    <span class="k">end</span>
@@ -370,7 +370,7 @@ now disconnect it.</p>
         </div>
         <p>We fork(2) before loading the file so that our pristine preloaded
 environment is untouched. The child process will load whatever code it
-needs to, then it exits and we&rsquo;re back to the baseline preloaded app.</p>
+needs to, then it exits and we&#39;re back to the baseline preloaded app.</p>
       </td>
       <td class=code>
         <div class='highlight'><pre>  <span class="nb">fork</span> <span class="k">do</span></pre></div>
@@ -400,7 +400,7 @@ connection.</p>
         <div class="pilwrap">
           <a class="pilcrow" href="#section-26">&#182;</a>
         </div>
-        <p>Unfortunately rspec&rsquo;s interface isn&rsquo;t as simple as just requiring the
+        <p>Unfortunately rspec&#39;s interface isn&#39;t as simple as just requiring the
 test file that you want to run (suddenly test/unit seems like the less
 crazy one!).</p>
       </td>
@@ -465,22 +465,51 @@ arguments.</p>
         <div class="pilwrap">
           <a class="pilcrow" href="#section-31">&#182;</a>
         </div>
-        <p>We reject anything in ARGV that isn&rsquo;t a file that exists. This takes
+        <p>We reject anything in ARGV that isn&#39;t a file that exists. This takes
 care of scripts that specify files like <code>spin push -r file.rb</code>. The <code>-r</code>
 bit will just be ignored.</p>
 
 <p>We build a string like <code>file1.rb|file2.rb</code> and pass it up to the server.</p>
       </td>
       <td class=code>
-        <div class='highlight'><pre>  <span class="n">f</span> <span class="o">=</span> <span class="n">files_to_load</span><span class="o">.</span><span class="n">select</span> <span class="p">{</span> <span class="o">|</span><span class="n">f</span><span class="o">|</span> <span class="no">File</span><span class="o">.</span><span class="n">exist?</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span><span class="o">[</span><span class="mi">0</span><span class="o">].</span><span class="n">to_s</span><span class="p">)</span> <span class="p">}</span><span class="o">.</span><span class="n">uniq</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">SEPARATOR</span><span class="p">)</span>
-  <span class="nb">abort</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">empty?</span>
-  <span class="nb">puts</span> <span class="s2">&quot;Spinning up </span><span class="si">#{</span><span class="n">f</span><span class="si">}</span><span class="s2">&quot;</span></pre></div>
+        <div class='highlight'><pre>  <span class="n">f</span> <span class="o">=</span> <span class="n">files_to_load</span><span class="o">.</span><span class="n">map</span> <span class="k">do</span> <span class="o">|</span><span class="n">file</span><span class="o">|</span>
+    <span class="n">file</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">first</span></pre></div>
       </td>
     </tr>
     <tr id='section-32'>
       <td class=docs>
         <div class="pilwrap">
           <a class="pilcrow" href="#section-32">&#182;</a>
+        </div>
+        <p>If the file exists then we can push it up just like it is</p>
+      </td>
+      <td class=code>
+        <div class='highlight'><pre>    <span class="k">if</span> <span class="no">File</span><span class="o">.</span><span class="n">exist?</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+      <span class="n">file</span></pre></div>
+      </td>
+    </tr>
+    <tr id='section-33'>
+      <td class=docs>
+        <div class="pilwrap">
+          <a class="pilcrow" href="#section-33">&#182;</a>
+        </div>
+        <p>kicker-2.5.0 now gives us file names without extensions, so we have to try adding it</p>
+      </td>
+      <td class=code>
+        <div class='highlight'><pre>    <span class="k">elsif</span> <span class="no">File</span><span class="o">.</span><span class="n">extname</span><span class="p">(</span><span class="n">file</span><span class="p">)</span><span class="o">.</span><span class="n">empty?</span>
+      <span class="n">file</span> <span class="o">=</span> <span class="o">[</span><span class="n">file</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="o">].</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+      <span class="no">File</span><span class="o">.</span><span class="n">exist?</span><span class="p">(</span><span class="n">file</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="n">file</span>
+    <span class="k">end</span>  
+  <span class="k">end</span><span class="o">.</span><span class="n">compact</span><span class="o">.</span><span class="n">uniq</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">SEPARATOR</span><span class="p">)</span>
+
+  <span class="nb">abort</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">empty?</span>
+  <span class="nb">puts</span> <span class="s2">&quot;Spinning up </span><span class="si">#{</span><span class="n">f</span><span class="si">}</span><span class="s2">&quot;</span></pre></div>
+      </td>
+    </tr>
+    <tr id='section-34'>
+      <td class=docs>
+        <div class="pilwrap">
+          <a class="pilcrow" href="#section-34">&#182;</a>
         </div>
         <p>This is the other end of the socket that <code>spin serve</code> opens. At this point
 <code>spin serve</code> will accept(2) our connection.</p>
@@ -489,10 +518,10 @@ bit will just be ignored.</p>
         <div class='highlight'><pre>  <span class="n">socket</span> <span class="o">=</span> <span class="no">UNIXSocket</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">socket_file</span><span class="p">)</span></pre></div>
       </td>
     </tr>
-    <tr id='section-33'>
+    <tr id='section-35'>
       <td class=docs>
         <div class="pilwrap">
-          <a class="pilcrow" href="#section-33">&#182;</a>
+          <a class="pilcrow" href="#section-35">&#182;</a>
         </div>
         <p>We put the filenames on the socket for the server to read and then load.</p>
 
