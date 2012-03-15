@@ -473,7 +473,7 @@ bit will just be ignored.</p>
       </td>
       <td class=code>
         <div class='highlight'><pre>  <span class="n">f</span> <span class="o">=</span> <span class="n">files_to_load</span><span class="o">.</span><span class="n">map</span> <span class="k">do</span> <span class="o">|</span><span class="n">file</span><span class="o">|</span>
-    <span class="n">file</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">first</span></pre></div>
+    <span class="n">file</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="o">.</span><span class="n">to_s</span></pre></div>
       </td>
     </tr>
     <tr id='section-32'>
@@ -498,7 +498,7 @@ bit will just be ignored.</p>
       <td class=code>
         <div class='highlight'><pre>    <span class="k">elsif</span> <span class="no">File</span><span class="o">.</span><span class="n">extname</span><span class="p">(</span><span class="n">file</span><span class="p">)</span><span class="o">.</span><span class="n">empty?</span>
       <span class="n">file</span> <span class="o">=</span> <span class="o">[</span><span class="n">file</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="o">].</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
-      <span class="no">File</span><span class="o">.</span><span class="n">exist?</span><span class="p">(</span><span class="n">file</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="n">file</span>
+      <span class="n">file</span> <span class="k">if</span> <span class="no">File</span><span class="o">.</span><span class="n">exist?</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
     <span class="k">end</span>  
   <span class="k">end</span><span class="o">.</span><span class="n">compact</span><span class="o">.</span><span class="n">uniq</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">SEPARATOR</span><span class="p">)</span>
 
