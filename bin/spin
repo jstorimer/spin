@@ -13,6 +13,7 @@ require 'digest/md5'
 # environment.
 require 'benchmark'
 require 'optparse'
+require 'pathname'
 
 SEPARATOR = '|'
 
@@ -46,8 +47,18 @@ def disconnect(connection)
   connection.close
 end
 
+def rails_root
+  path = Pathname.pwd
+  until path.join('config/application.rb').file?
+    return if path.root?
+    path = path.parent
+  end
+  path
+end
+
 # ## spin serve
 def serve(force_rspec, force_testunit, time, push_results)
+  root_path = rails_root and Dir.chdir(root_path)
   file = socket_file
 
   # We delete the tmp file for the Unix socket if it already exists. The file
@@ -62,7 +73,7 @@ def serve(force_rspec, force_testunit, time, push_results)
 
   test_framework = nil
 
-  if File.exist? 'config/application.rb'
+  if root_path
     sec = Benchmark.realtime {
       # We require config/application because that file (typically) loads Rails
       # and any Bundler deps, as well as loading the initialization code for
@@ -195,7 +206,7 @@ def push
   # bit will just be ignored.
   #
   # We build a string like `file1.rb|file2.rb` and pass it up to the server.
-  f = files_to_load.map do |file|
+  files_to_load.map! do |file|
     file = file.split(':').first.to_s
 
     # If the file exists then we can push it up just like it is
@@ -205,8 +216,15 @@ def push
     elsif File.extname(file).empty?
       file = [file, 'rb'].join('.')
       file if File.exist?(file)
-    end  
-  end.compact.uniq.join(SEPARATOR)
+    end
+  end.compact.uniq
+  if root_path = rails_root
+    files_to_load.map! do |file|
+      Pathname.new(file).expand_path.relative_path_from(root_path).to_s
+    end
+    Dir.chdir root_path
+  end
+  f = files_to_load.join(SEPARATOR)
 
   abort if f.empty?
   puts "Spinning up #{f}"
