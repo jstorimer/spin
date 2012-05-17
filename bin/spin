@@ -161,6 +161,8 @@ def serve(force_rspec, force_testunit, time, push_results)
       # Don't abort if the client already disconnected
     end
   end
+ensure
+  File.delete(file) if file && File.exist?(file)
 end
 
 def fork_and_run(files, push_results, test_framework, conn)
