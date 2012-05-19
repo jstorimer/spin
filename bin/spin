@@ -209,23 +209,36 @@ def push
   #
   # We build a string like `file1.rb|file2.rb` and pass it up to the server.
   files_to_load.map! do |file|
-    file = file.split(':').first.to_s
+    args = file.split(':')
+
+    file_name = args.first.to_s
+    line_number = args.last.to_i
 
     # If the file exists then we can push it up just like it is
-    if File.exist?(file)
-      file
-    # kicker-2.5.0 now gives us file names without extensions, so we have to try adding it
-    elsif File.extname(file).empty?
-      file = [file, 'rb'].join('.')
-      file if File.exist?(file)
+    file_name = if File.exist?(file_name)
+                  file_name
+                # kicker-2.5.0 now gives us file names without extensions, so we have to try adding it
+                elsif File.extname(file_name).empty?
+                  full_file_name = [file_name, 'rb'].join('.')
+                  full_file_name if File.exist?(full_file_name)
+                end
+
+    if line_number > 0
+      abort "You specified a line number. Only one file can be pushed in this case." if files_to_load.length > 1
+
+      "#{file_name}:#{line_number}"
+    else
+      file_name
     end
   end.compact.uniq
+
   if root_path = rails_root
     files_to_load.map! do |file|
       Pathname.new(file).expand_path.relative_path_from(root_path).to_s
     end
     Dir.chdir root_path
   end
+
   f = files_to_load.join(SEPARATOR)
 
   abort if f.empty?
