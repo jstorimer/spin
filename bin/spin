@@ -254,7 +254,7 @@ def push
     break if line[-1,1] == "\0"
     print line
   end
-rescue Errno::ECONNREFUSED
+rescue Errno::ECONNREFUSED, Errno::ENOENT
   abort "Connection was refused. Have you started up `spin serve` yet?"
 end
 
