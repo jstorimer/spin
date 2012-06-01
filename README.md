@@ -108,7 +108,7 @@ There's another project ([spork](https://github.com/sporkrb/spork)) that aims to
 
     Spin should work out of the box with any Rails app. No custom configuration required.
 
-3. It doesn't do any [crazy monkey patching](https://github.com/sporkrb/spork/blob/master/lib/spork/app_framework/rails.rb#L43-80).
+3. It doesn't do any [crazy monkey patching](https://github.com/sporkrb/spork-rails/blob/master/lib/spork/app_framework/rails.rb#L43-80).
 
 Docs
 ============
