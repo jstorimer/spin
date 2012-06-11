@@ -1,0 +1,9 @@
+# require common file that defines socket file location
+# parse options
+# open unix sock conn
+# send file(s) to be queued
+  # send null char unless we want to wait
+  # send extra empty char (signifies that we want to wait)
+    # send $stdout to other process for writing
+    # IO.select([connection]) to wait for it be closed
+

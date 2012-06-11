@@ -1,0 +1,11 @@
+# requires
+# parse options
+# at_exit { rm socketfile }
+# signal handlers
+# spawn file watcher w/ pipe
+# preload rails
+# IO.select pipe + unix socket
+  # add files to be processed to the next test run obj
+    # include the recved io if applicable
+  # if no test runs are in progress then spin one up (use a pipe to signal the master when it's finished), otherwise just wait
+
