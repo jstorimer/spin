@@ -3,10 +3,13 @@
 require 'spin/socket'
 
 # requires
-# parse options
+# parse options (preload an extra path(s), add path(s) to watch)
 at_exit { File.delete(Spin::Socket.filepath) }
 # signal handlers
+#
 # spawn file watcher w/ pipe
+reader = Spin::Watcher.spawn
+
 # preload rails
 # IO.select pipe + unix socket
   # add files to be processed to the next test run obj

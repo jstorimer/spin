@@ -22,3 +22,4 @@ PLATFORMS
 
 DEPENDENCIES
   guard-minitest
+  listen
