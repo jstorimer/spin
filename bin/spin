@@ -1,6 +1,10 @@
+#!/usr/bin/env ruby
+
+require 'spin/socket'
+
 # requires
 # parse options
-# at_exit { rm socketfile }
+at_exit { File.delete(Spin::Socket.filepath) }
 # signal handlers
 # spawn file watcher w/ pipe
 # preload rails
