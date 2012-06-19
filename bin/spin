@@ -69,6 +69,12 @@ def serve(force_rspec, force_testunit, time, push_results)
   # This socket is how we communicate with `spin push`.
   socket = UNIXServer.open(file)
 
+  # Trap SIGINT (Ctrl-C) so that we exit cleanly.
+  trap('SIGINT') {
+    socket.close
+    exit
+  }
+
   ENV['RAILS_ENV'] = 'test' unless ENV['RAILS_ENV']
 
   test_framework = nil
