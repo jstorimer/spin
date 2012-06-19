@@ -2,6 +2,7 @@
 
 require 'tempfile' # for Dir::tmpdir
 require 'digest/md5'
+require 'socket'
 
 module Spin
   class Socket
@@ -10,6 +11,10 @@ module Spin
     def self.filepath
       slug = Digest::MD5.hexdigest ['spin', Dir.pwd].join('-')
       [Dir::tmpdir, slug].join('/')
+    end
+
+    def self.open
+      UNIXServer.open(filepath)
     end
   end
 end

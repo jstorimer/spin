@@ -1,3 +1,5 @@
+require 'listen'
+
 module Spin
   module Watcher
     extend self
@@ -11,7 +13,8 @@ module Spin
       fork {
         rd.close
 
-        Listen.to(AppDirectories + TestDirectories, :filter => /\.rb$/, :latency => 0.1) do |modified, added, removed|
+        dirs = AppDirectories + TestDirectories
+        Listen.to(*dirs, :filter => /\.rb$/, :latency => 0.1) do |modified, added, removed|
           changed_files = [modified + added + removed].uniq
 
           files_to_queue = changed_files.map { |file|
