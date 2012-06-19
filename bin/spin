@@ -11,6 +11,7 @@ at_exit { File.delete(Spin::Socket.filepath) }
 reader = Spin::Watcher.spawn
 
 # preload rails
+Spin::Preloader.require_files
 # IO.select pipe + unix socket
   # add files to be processed to the next test run obj
     # include the recved io if applicable
