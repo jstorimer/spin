@@ -27,6 +27,13 @@ module Spin
           opts.on("-e", "Stub to keep kicker happy")
           opts.on("-v", "--version", "Show Version") { puts Spin::VERSION; exit }
           opts.on("-h", "--help") { $stderr.puts opts; exit }
+          opts.on('--', 'Separates trailing arguments to be forwarded to  the test runner') do |v|
+            trailing_pushed_args = []
+            while opt = ARGV.shift
+              trailing_pushed_args << opt
+            end
+            options[:trailing_pushed_args] = trailing_pushed_args
+          end
         end
         parser.parse!
 
