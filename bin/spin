@@ -214,7 +214,7 @@ def push
   # bit will just be ignored.
   #
   # We build a string like `file1.rb|file2.rb` and pass it up to the server.
-  files_to_load.map! do |file|
+  files_to_load = files_to_load.map do |file|
     args = file.split(':')
 
     file_name = args.first.to_s
