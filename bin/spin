@@ -60,6 +60,7 @@ end
 def serve(force_rspec, force_testunit, time, push_results, preload)
   root_path = rails_root(preload) and Dir.chdir(root_path)
   file = socket_file
+  Spin.parse_hook_file(root_path)
 
   # We delete the tmp file for the Unix socket if it already exists. The file
   # is scoped to the `pwd`, so if it already exists then it must be from an
@@ -91,7 +92,9 @@ def serve(force_rspec, force_testunit, time, push_results, preload)
       # But you can't initialize the application because any non-trivial app will
       # involve it's models/controllers, etc. in its initialization, which you
       # definitely don't want to preload.
+      Spin.execute_hook(:before_preload)
       require File.expand_path preload.sub('.rb','')
+      Spin.execute_hook(:after_preload)
 
       # Determine the test framework to use using the passed-in 'force' options
       # or else default to checking for defined constants.
@@ -172,6 +175,7 @@ ensure
 end
 
 def fork_and_run(files, push_results, test_framework, conn)
+  Spin.execute_hook(:before_fork)
   # We fork(2) before loading the file so that our pristine preloaded
   # environment is untouched. The child process will load whatever code it
   # needs to, then it exits and we're back to the baseline preloaded app.
@@ -183,6 +187,8 @@ def fork_and_run(files, push_results, test_framework, conn)
       $stdout.reopen(conn)
       $stderr.reopen(conn)
     end
+
+    Spin.execute_hook(:after_fork)
 
     puts
     puts "Loading #{files.inspect}"
@@ -262,6 +268,32 @@ def push(preload)
   end
 rescue Errno::ECONNREFUSED, Errno::ENOENT
   abort "Connection was refused. Have you started up `spin serve` yet?"
+end
+
+module Spin
+  HOOKS = [:before_fork, :after_fork, :before_preload, :after_preload]
+
+  def self.hook(name, &block)
+    raise unless HOOKS.include?(name)
+    _hooks(name) << block
+  end
+
+  def self.execute_hook(name)
+    raise unless HOOKS.include?(name)
+    _hooks(name).each(&:call)
+  end
+
+  def self.parse_hook_file(root)
+    load(root.join(".spin.rb"))
+  end
+
+  private
+
+  def self._hooks(name)
+    @hooks ||= {}
+    @hooks[name] ||= []
+    @hooks[name]
+  end
 end
 
 force_rspec = false
