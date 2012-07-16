@@ -179,8 +179,14 @@ def fork_and_run(files, push_results, test_framework, conn)
     # To push the test results to the push process instead of having them
     # displayed by the server, we reopen $stdout/$stderr to the open
     # connection.
+    tty = files.delete "tty?"
     if push_results
       $stdout.reopen(conn)
+      if tty
+        def $stdout.tty?
+          true
+        end
+      end
       $stderr.reopen(conn)
     end
 
@@ -245,6 +251,7 @@ def push
     Dir.chdir root_path
   end
 
+  files_to_load << "tty?" if $stdout.tty?
   f = files_to_load.join(SEPARATOR)
 
   abort if f.empty?
