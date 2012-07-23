@@ -213,14 +213,13 @@ end
 def push
   # The filenames that we will spin up to `spin serve` are passed in as
   # arguments.
-  files_to_load = ARGV
-
+  #
   # We reject anything in ARGV that isn't a file that exists. This takes
   # care of scripts that specify files like `spin push -r file.rb`. The `-r`
   # bit will just be ignored.
   #
   # We build a string like `file1.rb|file2.rb` and pass it up to the server.
-  files_to_load.map! do |file|
+  files_to_load = ARGV.map do |file|
     args = file.split(':')
 
     file_name = args.first.to_s
