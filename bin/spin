@@ -47,9 +47,9 @@ def disconnect(connection)
   connection.close
 end
 
-def rails_root
+def rails_root(preload)
   path = Pathname.pwd
-  until path.join('config/application.rb').file?
+  until path.join(preload).file?
     return if path.root?
     path = path.parent
   end
@@ -57,8 +57,8 @@ def rails_root
 end
 
 # ## spin serve
-def serve(force_rspec, force_testunit, time, push_results)
-  root_path = rails_root and Dir.chdir(root_path)
+def serve(force_rspec, force_testunit, time, push_results, preload)
+  root_path = rails_root(preload) and Dir.chdir(root_path)
   file = socket_file
 
   # We delete the tmp file for the Unix socket if it already exists. The file
@@ -91,7 +91,7 @@ def serve(force_rspec, force_testunit, time, push_results)
       # But you can't initialize the application because any non-trivial app will
       # involve it's models/controllers, etc. in its initialization, which you
       # definitely don't want to preload.
-      require File.expand_path 'config/application'
+      require File.expand_path preload.sub('.rb','')
 
       # Determine the test framework to use using the passed-in 'force' options
       # or else default to checking for defined constants.
@@ -114,7 +114,7 @@ def serve(force_rspec, force_testunit, time, push_results)
     # This is the amount of time that you'll save on each subsequent test run.
     puts "Preloaded Rails env in #{sec}s..."
   else
-    warn "Could not find config/application.rb. Are you running this from the root of a Rails project?"
+    warn "Could not find #{preload}. Are you running this from the root of a Rails project?"
   end
 
   puts "Pushing test results back to push processes" if push_results
@@ -210,7 +210,7 @@ def fork_and_run(files, push_results, test_framework, conn)
 end
 
 # ## spin push
-def push
+def push(preload)
   # The filenames that we will spin up to `spin serve` are passed in as
   # arguments.
   files_to_load = ARGV
@@ -244,7 +244,7 @@ def push
     end
   end.compact!.uniq!
 
-  if root_path = rails_root
+  if root_path = rails_root(preload)
     files_to_load.map! do |file|
       Pathname.new(file).expand_path.relative_path_from(root_path).to_s
     end
@@ -275,6 +275,7 @@ force_rspec = false
 force_testunit = false
 time = false
 push_results = false
+preload = "config/application.rb"
 options = OptionParser.new do |opts|
   opts.banner = usage
   opts.separator ""
@@ -300,6 +301,10 @@ options = OptionParser.new do |opts|
     push_results = v
   end
 
+  opts.on('--preload FILE', "Preload this file instead of #{preload}") do |v|
+    preload = v
+  end
+
   opts.separator "General Options:"
   opts.on('-e', 'Stub to keep kicker happy')
   opts.on('-h', '--help') do
@@ -311,8 +316,8 @@ options.parse!
 
 subcommand = ARGV.shift
 case subcommand
-when 'serve' then serve(force_rspec, force_testunit, time, push_results)
-when 'push' then push
+when 'serve' then serve(force_rspec, force_testunit, time, push_results, preload)
+when 'push' then push(preload)
 else
   $stderr.puts options
   exit 1
