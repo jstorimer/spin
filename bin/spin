@@ -242,7 +242,7 @@ def push
     else
       file_name
     end
-  end.compact!.uniq!
+  end.compact.uniq
 
   if root_path = rails_root
     files_to_load.map! do |file|
