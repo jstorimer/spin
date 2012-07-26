@@ -60,7 +60,7 @@ end
 def serve(force_rspec, force_testunit, time, push_results, preload)
   root_path = rails_root(preload) and Dir.chdir(root_path)
   file = socket_file
-  Spin.parse_hook_file(root_path)
+  Spin.parse_hook_file(root_path) if root_path
 
   # We delete the tmp file for the Unix socket if it already exists. The file
   # is scoped to the `pwd`, so if it already exists then it must be from an
@@ -291,7 +291,8 @@ module Spin
   end
 
   def self.parse_hook_file(root)
-    load(root.join(".spin.rb"))
+    file = root.join(".spin.rb")
+    load(file) if File.exist?(file)
   end
 
   private
