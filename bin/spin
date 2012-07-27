@@ -102,7 +102,6 @@ def serve(force_rspec, force_testunit, time, push_results, preload)
 
       # Preload RSpec to save some time on each test run
       begin
-        require 'rspec/rails'
         require 'rspec/autorun'
 
         # Tell RSpec it's running with a tty to allow colored output
