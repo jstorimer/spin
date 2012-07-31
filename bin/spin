@@ -339,6 +339,10 @@ options = OptionParser.new do |opts|
 
   opts.separator "General Options:"
   opts.on('-e', 'Stub to keep kicker happy')
+  opts.on('-v', '--version', 'Show Version') do
+    require 'spin/version'
+    puts Spin::VERSION; exit
+  end
   opts.on('-h', '--help') do
     $stderr.puts opts
     exit 1
