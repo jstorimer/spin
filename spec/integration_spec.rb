@@ -13,4 +13,12 @@ describe "Spin" do
   it "can show current version" do
     spin("--version").should =~ /^\d+\.\d+\.\d+/
   end
+
+  it "can show help" do
+    spin("--help").should include("General Options:")
+  end
+
+  it "shows help when no arguments are given" do
+    spin("", :fail => true).should include("General Options:")
+  end
 end
