@@ -345,7 +345,7 @@ options = OptionParser.new do |opts|
   end
   opts.on('-h', '--help') do
     $stderr.puts opts
-    exit 1
+    exit
   end
 end
 options.parse!
