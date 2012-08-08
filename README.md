@@ -132,4 +132,5 @@ If Spin isn't scratching your itch then one of these projects might:
 * [guard-spin](https://github.com/vizjerai/guard-spin)
 * [Spork](https://github.com/sporkrb/spork)
 * [TestR](https://github.com/sunaku/testr)
+* [Zeus](https://github.com/burke/zeus)
 
