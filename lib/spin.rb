@@ -16,8 +16,8 @@ module Spin
   PUSH_FILE_SEPARATOR = '|'
 
   class << self
-    def serve(force_rspec, force_testunit, time, push_results, preload)
-      root_path = rails_root(preload) and Dir.chdir(root_path)
+    def serve(options)
+      root_path = rails_root(options[:preload]) and Dir.chdir(root_path)
       file = socket_file
       Spin.parse_hook_file(root_path) if root_path
 
@@ -52,12 +52,12 @@ module Spin
           # involve it's models/controllers, etc. in its initialization, which you
           # definitely don't want to preload.
           execute_hook(:before_preload)
-          require File.expand_path preload.sub('.rb','')
+          require File.expand_path options[:preload].sub('.rb','')
           execute_hook(:after_preload)
 
           # Determine the test framework to use using the passed-in 'force' options
           # or else default to checking for defined constants.
-          test_framework = determine_test_framework(force_rspec, force_testunit)
+          test_framework = determine_test_framework(options)
 
           # Preload RSpec to save some time on each test run
           begin
@@ -75,18 +75,18 @@ module Spin
         # This is the amount of time that you'll save on each subsequent test run.
         puts "Preloaded Rails env in #{sec}s..."
       else
-        warn "Could not find #{preload}. Are you running this from the root of a Rails project?"
+        warn "Could not find #{options[:preload]}. Are you running this from the root of a Rails project?"
       end
 
-      puts "Pushing test results back to push processes" if push_results
+      puts "Pushing test results back to push processes" if options[:push_results]
 
       loop do
         # If we're not going to push the results,
         # Trap SIGQUIT (Ctrl+\) and re-run the last files that were
         # pushed.
-        if !push_results
+        unless options[:push_results]
           trap('QUIT') do
-            fork_and_run(@last_files_ran, push_results, test_framework, nil)
+            fork_and_run(@last_files_ran, options[:push_results], test_framework, nil)
             # See WAIT below
             Process.wait
           end
@@ -101,13 +101,13 @@ module Spin
 
         # If spin is started with the time flag we will track total execution so
         # you can easily compare it with time rspec spec for example
-        start = Time.now if time
+        start = Time.now if options[:time]
 
         # If we're not sending results back to the push process, we can disconnect
         # it immediately.
-        disconnect(conn) unless push_results
+        disconnect(conn) unless options[:push_results]
 
-        fork_and_run(files, push_results, test_framework, conn)
+        fork_and_run(files, test_framework, conn, options)
 
         # WAIT: We don't want the parent process handling multiple test runs at the same
         # time because then we'd need to deal with multiple test databases, and
@@ -122,7 +122,7 @@ module Spin
         # Tests have now run. If we were pushing results to a push process, we can
         # now disconnect it.
         begin
-          disconnect(conn) if push_results
+          disconnect(conn) if options[:push_results]
         rescue Errno::EPIPE
           # Don't abort if the client already disconnected
         end
@@ -131,7 +131,7 @@ module Spin
       File.delete(file) if file && File.exist?(file)
     end
 
-    def push(preload, argv)
+    def push(argv, options)
       # The filenames that we will spin up to `spin serve` are passed in as
       # arguments.
       files_to_load = argv
@@ -165,7 +165,7 @@ module Spin
         end
       end.compact.uniq
 
-      if root_path = rails_root(preload)
+      if root_path = rails_root(options[:preload])
         files_to_load.map! do |file|
           Pathname.new(file).expand_path.relative_path_from(root_path).to_s
         end
@@ -194,10 +194,10 @@ module Spin
 
     private
 
-    def determine_test_framework(force_rspec, force_testunit)
-      if force_rspec
+    def determine_test_framework(options)
+      if options[:force_rspec]
         :rspec
-      elsif force_testunit
+      elsif options[:force_testunit]
         :testunit
       elsif defined?(RSpec)
         :rspec
@@ -220,7 +220,7 @@ module Spin
       path
     end
 
-    def fork_and_run(files, push_results, test_framework, conn)
+    def fork_and_run(files, test_framework, conn, options)
       execute_hook(:before_fork)
       # We fork(2) before loading the file so that our pristine preloaded
       # environment is untouched. The child process will load whatever code it
@@ -230,7 +230,7 @@ module Spin
         # displayed by the server, we reopen $stdout/$stderr to the open
         # connection.
         tty = files.delete "tty?"
-        if push_results
+        if options[:push_results]
           $stdout.reopen(conn)
           if tty
             def $stdout.tty?
