@@ -17,118 +17,24 @@ module Spin
 
   class << self
     def serve(options)
-      root_path = rails_root(options[:preload]) and Dir.chdir(root_path)
-      file = socket_file
-      Spin.parse_hook_file(root_path) if root_path
-
-      # We delete the tmp file for the Unix socket if it already exists. The file
-      # is scoped to the `pwd`, so if it already exists then it must be from an
-      # old run of `spin serve` and can be cleaned up.
-      File.delete(file) if File.exist?(file)
-
-      # This socket is how we communicate with `spin push`.
-      socket = UNIXServer.open(file)
-
-      # Trap SIGINT (Ctrl-C) so that we exit cleanly.
-      trap('SIGINT') {
-        socket.close
-        exit
-      }
-
       ENV['RAILS_ENV'] = 'test' unless ENV['RAILS_ENV']
 
-      if root_path
-        duration = Benchmark.realtime do
-          # We require config/application because that file (typically) loads Rails
-          # and any Bundler deps, as well as loading the initialization code for
-          # the app, but it doesn't actually perform the initialization. That happens
-          # in config/environment.
-          #
-          # In my experience that's the best we can do in terms of preloading. Rails
-          # and the gem dependencies rarely change and so don't need to be reloaded.
-          # But you can't initialize the application because any non-trivial app will
-          # involve it's models/controllers, etc. in its initialization, which you
-          # definitely don't want to preload.
-          execute_hook(:before_preload)
-          require File.expand_path options[:preload].sub('.rb', '')
-          execute_hook(:after_preload)
-
-          # Determine the test framework to use using the passed-in 'force' options
-          # or else default to checking for defined constants.
-          options[:test_framework] ||= determine_test_framework
-
-          # Preload RSpec to save some time on each test run
-          if options[:test_framework]
-            begin
-              require 'rspec/autorun'
-
-              # Tell RSpec it's running with a tty to allow colored output
-              if RSpec.respond_to?(:configure)
-                RSpec.configure do |c|
-                  c.tty = true if c.respond_to?(:tty=)
-                end
-              end
-            rescue LoadError
-            end
-          end
-        end
-        # This is the amount of time that you'll save on each subsequent test run.
-        puts "Preloaded Rails env in #{duration}s..."
+      if root_path = rails_root(options[:preload])
+        Dir.chdir(root_path)
+        Spin.parse_hook_file(root_path)
       else
         warn "Could not find #{options[:preload]}. Are you running this from the root of a Rails project?"
       end
 
-      puts "Pushing test results back to push processes" if options[:push_results]
+      open_socket do |socket|
+        preload(options) if root_path
 
-      loop do
-        # If we're not going to push the results,
-        # Trap SIGQUIT (Ctrl+\) and re-run the last files that were
-        # pushed.
-        unless options[:push_results]
-          trap('QUIT') do
-            fork_and_run(@last_files_ran, nil, options)
-            # See WAIT below
-            Process.wait
-          end
-        end
+        puts "Pushing test results back to push processes" if options[:push_results]
 
-        # Since `spin push` reconnects each time it has new files for us we just
-        # need to accept(2) connections from it.
-        conn = socket.accept
-        # This should be a list of relative paths to files.
-        files = conn.gets.chomp
-        files = files.split(PUSH_FILE_SEPARATOR)
-
-        # If spin is started with the time flag we will track total execution so
-        # you can easily compare it with time rspec spec for example
-        start = Time.now if options[:time]
-
-        # If we're not sending results back to the push process, we can disconnect
-        # it immediately.
-        disconnect(conn) unless options[:push_results]
-
-        fork_and_run(files, conn, options)
-
-        # WAIT: We don't want the parent process handling multiple test runs at the same
-        # time because then we'd need to deal with multiple test databases, and
-        # that destroys the idea of being simple to use. So we wait(2) until the
-        # child process has finished running the test.
-        Process.wait
-
-        # If we are tracking time we will output it here after everything has
-        # finished running
-        puts "Total execution time was #{Time.now - start} seconds" if start
-
-        # Tests have now run. If we were pushing results to a push process, we can
-        # now disconnect it.
-        begin
-          disconnect(conn) if options[:push_results]
-        rescue Errno::EPIPE
-          # Don't abort if the client already disconnected
+        loop do
+          run_pushed_tests(socket, options)
         end
       end
-    ensure
-      File.delete(file) if file && File.exist?(file)
     end
 
     def push(argv, options)
@@ -193,6 +99,114 @@ module Spin
     end
 
     private
+
+
+    # If we're not going to push the results,
+    # Trap SIGQUIT (Ctrl+\) and re-run the last files that were
+    # pushed.
+    def run_pushed_tests(socket, options)
+      unless options[:push_results]
+        trap('QUIT') do
+          fork_and_run(@last_files_ran, nil, options)
+          # See WAIT below
+          Process.wait
+        end
+      end
+
+      # Since `spin push` reconnects each time it has new files for us we just
+      # need to accept(2) connections from it.
+      conn = socket.accept
+      # This should be a list of relative paths to files.
+      files = conn.gets.chomp
+      files = files.split(PUSH_FILE_SEPARATOR)
+
+      # If spin is started with the time flag we will track total execution so
+      # you can easily compare it with time rspec spec for example
+      start = Time.now if options[:time]
+
+      # If we're not sending results back to the push process, we can disconnect
+      # it immediately.
+      disconnect(conn) unless options[:push_results]
+
+      fork_and_run(files, conn, options)
+
+      # WAIT: We don't want the parent process handling multiple test runs at the same
+      # time because then we'd need to deal with multiple test databases, and
+      # that destroys the idea of being simple to use. So we wait(2) until the
+      # child process has finished running the test.
+      Process.wait
+
+      # If we are tracking time we will output it here after everything has
+      # finished running
+      puts "Total execution time was #{Time.now - start} seconds" if start
+
+      # Tests have now run. If we were pushing results to a push process, we can
+      # now disconnect it.
+      begin
+        disconnect(conn) if options[:push_results]
+      rescue Errno::EPIPE
+        # Don't abort if the client already disconnected
+      end
+    end
+
+    def preload(options)
+      duration = Benchmark.realtime do
+        # We require config/application because that file (typically) loads Rails
+        # and any Bundler deps, as well as loading the initialization code for
+        # the app, but it doesn't actually perform the initialization. That happens
+        # in config/environment.
+        #
+        # In my experience that's the best we can do in terms of preloading. Rails
+        # and the gem dependencies rarely change and so don't need to be reloaded.
+        # But you can't initialize the application because any non-trivial app will
+        # involve it's models/controllers, etc. in its initialization, which you
+        # definitely don't want to preload.
+        execute_hook(:before_preload)
+        require File.expand_path options[:preload].sub('.rb', '')
+        execute_hook(:after_preload)
+
+        # Determine the test framework to use using the passed-in 'force' options
+        # or else default to checking for defined constants.
+        options[:test_framework] ||= determine_test_framework
+
+        # Preload RSpec to save some time on each test run
+        if options[:test_framework]
+          begin
+            require 'rspec/autorun'
+
+            # Tell RSpec it's running with a tty to allow colored output
+            if RSpec.respond_to?(:configure)
+              RSpec.configure do |c|
+                c.tty = true if c.respond_to?(:tty=)
+              end
+            end
+          rescue LoadError
+          end
+        end
+      end
+      # This is the amount of time that you'll save on each subsequent test run.
+      puts "Preloaded Rails env in #{duration}s..."
+    end
+
+    # This socket is how we communicate with `spin push`.
+    # We delete the tmp file for the Unix socket if it already exists. The file
+    # is scoped to the `pwd`, so if it already exists then it must be from an
+    # old run of `spin serve` and can be cleaned up.
+    def open_socket
+      file = socket_file
+      File.delete(file) if File.exist?(file)
+      socket = UNIXServer.open(file)
+
+      # Trap SIGINT (Ctrl-C) so that we exit cleanly.
+      trap('SIGINT') do
+        socket.close
+        exit
+      end
+
+      yield socket
+    ensure
+      File.delete(file) if file && File.exist?(file)
+    end
 
     def determine_test_framework
       if defined?(RSpec)
