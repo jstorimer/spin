@@ -78,14 +78,14 @@ describe "Spin" do
 
     it "can serve and push" do
       served, pushed = serve_and_push("", "test/foo_test.rb")
-      served.should include "Preloaded Rails env in 0"
+      served.should include "Preloaded Rails env in "
       served.should include "2468"
       pushed.first.should == @default_pushed
     end
 
     it "can run files without .rb extension" do
       served, pushed = serve_and_push("", "test/foo_test")
-      served.should include "Preloaded Rails env in 0"
+      served.should include "Preloaded Rails env in "
       served.should include "2468"
       pushed.first.should == @default_pushed
     end
@@ -93,7 +93,7 @@ describe "Spin" do
     it "can run multiple times" do
       write "test/foo_test.rb", "puts $xxx *= 2"
       served, pushed = serve_and_push("", ["test/foo_test.rb", "test/foo_test.rb", "test/foo_test.rb"])
-      served.should include "Preloaded Rails env in 0"
+      served.should include "Preloaded Rails env in "
       served.scan("2468").size.should == 3
       pushed.size.should == 3
       pushed.each{|x| x.should == @default_pushed }
@@ -102,17 +102,17 @@ describe "Spin" do
     it "can run multiple files at once" do
       write "test/bar_test.rb", "puts $xxx / 2"
       served, pushed = serve_and_push("", "test/foo_test.rb test/bar_test.rb")
-      served.should include "Preloaded Rails env in 0"
+      served.should include "Preloaded Rails env in "
       served.should include "2468"
       served.should include "617"
-      pushed.first.should == "Spinning up test/foo_test.rb|test/bar_test.rb\n"
+      pushed.first.should == "Spinning up test/foo_test.rb test/bar_test.rb\n"
     end
 
     it "complains when the preloaded file cannot be found" do
       delete "config/application.rb"
       write "test/foo_test.rb", "puts 2468"
       served, pushed = serve_and_push("", "test/foo_test.rb")
-      served.should_not include "Preloaded Rails env in 0"
+      served.should_not include "Preloaded Rails env in "
       served.should include "Could not find config/application.rb. Are you running"
       served.should include "2468"
       pushed.first.should == @default_pushed
@@ -155,7 +155,7 @@ describe "Spin" do
 
       it "can --push-results" do
         served, pushed = serve_and_push("--push-results", "test/foo_test.rb")
-        served.should include "Preloaded Rails env in 0"
+        served.should include "Preloaded Rails env in "
         served.should_not include "2468"
         pushed.first.should include "2468"
       end
@@ -164,7 +164,7 @@ describe "Spin" do
         write "config/application.rb", "raise"
         write "config/environment.rb", "$xxx = 1234"
         served, pushed = serve_and_push("--preload config/environment.rb", "test/foo_test.rb")
-        served.should include "Preloaded Rails env in 0"
+        served.should include "Preloaded Rails env in "
         served.should include "2468"
         pushed.first.should == @default_pushed
       end
@@ -179,7 +179,7 @@ describe "Spin" do
 
       it "ignores -e" do
         served, pushed = serve_and_push("-e", "test/foo_test.rb -e")
-        served.should include "Preloaded Rails env in 0"
+        served.should include "Preloaded Rails env in "
         served.should include "2468"
         pushed.first.should == @default_pushed
       end

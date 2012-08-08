@@ -38,8 +38,42 @@ module Spin
     end
 
     def push(argv, options)
-      # The filenames that we will spin up to `spin serve` are passed in as
-      # arguments.
+      files_to_load = convert_push_arguments_to_files(argv)
+
+      if root_path = rails_root(options[:preload])
+        make_files_relative(files_to_load, root_path)
+        Dir.chdir root_path
+      end
+
+      files_to_load << "tty?" if $stdout.tty?
+
+      abort if files_to_load.empty?
+
+      puts "Spinning up #{files_to_load.join(" ")}"
+      send_files_to_serve(files_to_load)
+    end
+
+    private
+
+    def send_files_to_serve(files_to_load)
+      # This is the other end of the socket that `spin serve` opens. At this point
+      # `spin serve` will accept(2) our connection.
+      socket = UNIXSocket.open(socket_file)
+
+      # We put the filenames on the socket for the server to read and then load.
+      socket.puts files_to_load.join(PUSH_FILE_SEPARATOR)
+
+      while line = socket.readpartial(100)
+        break if line[-1,1] == "\0"
+        print line
+      end
+    rescue Errno::ECONNREFUSED, Errno::ENOENT
+      abort "Connection was refused. Have you started up `spin serve` yet?"
+    end
+
+    # The filenames that we will spin up to `spin serve` are passed in as
+    # arguments.
+    def convert_push_arguments_to_files(argv)
       files_to_load = argv
 
       # We reject anything in ARGV that isn't a file that exists. This takes
@@ -69,49 +103,17 @@ module Spin
         else
           file_name
         end
-      end.compact.uniq
-
-      if root_path = rails_root(options[:preload])
-        files_to_load.map! do |file|
-          Pathname.new(file).expand_path.relative_path_from(root_path).to_s
-        end
-        Dir.chdir root_path
-      end
-
-      files_to_load << "tty?" if $stdout.tty?
-      f = files_to_load.join(PUSH_FILE_SEPARATOR)
-
-      abort if f.empty?
-      puts "Spinning up #{f}"
-
-      # This is the other end of the socket that `spin serve` opens. At this point
-      # `spin serve` will accept(2) our connection.
-      socket = UNIXSocket.open(socket_file)
-      # We put the filenames on the socket for the server to read and then load.
-      socket.puts f
-
-      while line = socket.readpartial(100)
-        break if line[-1,1] == "\0"
-        print line
-      end
-    rescue Errno::ECONNREFUSED, Errno::ENOENT
-      abort "Connection was refused. Have you started up `spin serve` yet?"
+      end.reject(&:empty?).uniq
     end
 
-    private
-
-
-    # If we're not going to push the results,
-    # Trap SIGQUIT (Ctrl+\) and re-run the last files that were
-    # pushed.
-    def run_pushed_tests(socket, options)
-      unless options[:push_results]
-        trap('QUIT') do
-          fork_and_run(@last_files_ran, nil, options)
-          # See WAIT below
-          Process.wait
-        end
+    def make_files_relative(files_to_load, root_path)
+      files_to_load.map! do |file|
+        Pathname.new(file).expand_path.relative_path_from(root_path).to_s
       end
+    end
+
+    def run_pushed_tests(socket, options)
+      rerun_last_tests_on_quit(options) unless options[:push_results]
 
       # Since `spin push` reconnects each time it has new files for us we just
       # need to accept(2) connections from it.
@@ -146,6 +148,15 @@ module Spin
         disconnect(conn) if options[:push_results]
       rescue Errno::EPIPE
         # Don't abort if the client already disconnected
+      end
+    end
+
+    # Trap SIGQUIT (Ctrl+\) and re-run the last files that were pushed
+    # TODO test this
+    def rerun_last_tests_on_quit(options)
+      trap('QUIT') do
+        fork_and_run(@last_files_ran, nil, options)
+        Process.wait
       end
     end
 
