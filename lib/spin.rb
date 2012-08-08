@@ -37,10 +37,8 @@ module Spin
 
       ENV['RAILS_ENV'] = 'test' unless ENV['RAILS_ENV']
 
-      test_framework = nil
-
       if root_path
-        sec = Benchmark.realtime {
+        duration = Benchmark.realtime do
           # We require config/application because that file (typically) loads Rails
           # and any Bundler deps, as well as loading the initialization code for
           # the app, but it doesn't actually perform the initialization. That happens
@@ -52,28 +50,30 @@ module Spin
           # involve it's models/controllers, etc. in its initialization, which you
           # definitely don't want to preload.
           execute_hook(:before_preload)
-          require File.expand_path options[:preload].sub('.rb','')
+          require File.expand_path options[:preload].sub('.rb', '')
           execute_hook(:after_preload)
 
           # Determine the test framework to use using the passed-in 'force' options
           # or else default to checking for defined constants.
-          test_framework = determine_test_framework(options)
+          options[:test_framework] ||= determine_test_framework
 
           # Preload RSpec to save some time on each test run
-          begin
-            require 'rspec/autorun'
+          if options[:test_framework]
+            begin
+              require 'rspec/autorun'
 
-            # Tell RSpec it's running with a tty to allow colored output
-            if RSpec.respond_to?(:configure)
-              RSpec.configure do |c|
-                c.tty = true if c.respond_to?(:tty=)
+              # Tell RSpec it's running with a tty to allow colored output
+              if RSpec.respond_to?(:configure)
+                RSpec.configure do |c|
+                  c.tty = true if c.respond_to?(:tty=)
+                end
               end
+            rescue LoadError
             end
-          rescue LoadError
-          end if test_framework == :rspec
-        }
+          end
+        end
         # This is the amount of time that you'll save on each subsequent test run.
-        puts "Preloaded Rails env in #{sec}s..."
+        puts "Preloaded Rails env in #{duration}s..."
       else
         warn "Could not find #{options[:preload]}. Are you running this from the root of a Rails project?"
       end
@@ -86,7 +86,7 @@ module Spin
         # pushed.
         unless options[:push_results]
           trap('QUIT') do
-            fork_and_run(@last_files_ran, options[:push_results], test_framework, nil)
+            fork_and_run(@last_files_ran, nil, options)
             # See WAIT below
             Process.wait
           end
@@ -107,7 +107,7 @@ module Spin
         # it immediately.
         disconnect(conn) unless options[:push_results]
 
-        fork_and_run(files, test_framework, conn, options)
+        fork_and_run(files, conn, options)
 
         # WAIT: We don't want the parent process handling multiple test runs at the same
         # time because then we'd need to deal with multiple test databases, and
@@ -194,12 +194,8 @@ module Spin
 
     private
 
-    def determine_test_framework(options)
-      if options[:force_rspec]
-        :rspec
-      elsif options[:force_testunit]
-        :testunit
-      elsif defined?(RSpec)
+    def determine_test_framework
+      if defined?(RSpec)
         :rspec
       else
         :testunit
@@ -220,7 +216,7 @@ module Spin
       path
     end
 
-    def fork_and_run(files, test_framework, conn, options)
+    def fork_and_run(files, conn, options)
       execute_hook(:before_fork)
       # We fork(2) before loading the file so that our pristine preloaded
       # environment is untouched. The child process will load whatever code it
@@ -248,7 +244,7 @@ module Spin
         # Unfortunately rspec's interface isn't as simple as just requiring the
         # test file that you want to run (suddenly test/unit seems like the less
         # crazy one!).
-        if test_framework == :rspec
+        if options[:test_framework] == :rspec
           # We pretend the filepath came in as an argument and duplicate the
           # behaviour of the `rspec` binary.
           ARGV.push files
