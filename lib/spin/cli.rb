@@ -5,13 +5,11 @@ module Spin
   module CLI
     class << self
       def run(argv)
-        force_rspec = false
-        force_testunit = false
-        time = false
-        push_results = false
-        preload = "config/application.rb"
+        options = {
+          :preload => "config/application.rb"
+        }
 
-        options = OptionParser.new do |opts|
+        parser = OptionParser.new do |opts|
           opts.banner = usage
           opts.separator ""
           opts.separator "Server Options:"
@@ -20,44 +18,24 @@ module Spin
             $LOAD_PATH.concat(dirs.split(File::PATH_SEPARATOR))
           end
 
-          opts.on('--rspec', 'Force the selected test framework to RSpec') do |v|
-            force_rspec = v
-          end
-
-          opts.on('--test-unit', 'Force the selected test framework to Test::Unit') do |v|
-            force_testunit = v
-          end
-
-          opts.on('-t', '--time', 'See total execution time for each test run') do |v|
-            time = true
-          end
-
-          opts.on('--push-results', 'Push test results to the push process') do |v|
-            push_results = v
-          end
-
-          opts.on('--preload FILE', "Preload this file instead of #{preload}") do |v|
-            preload = v
-          end
-
+          opts.on("--rspec", "Force the selected test framework to RSpec") { options[:test_framework] = :testunit }
+          opts.on("--test-unit", "Force the selected test framework to Test::Unit") { options[:test_framework] = :rspec }
+          opts.on("-t", "--time", "See total execution time for each test run") { options[:time] = true }
+          opts.on("--push-results", "Push test results to the push process") { options[:push_results] = true }
+          opts.on("--preload FILE", "Preload this file instead of #{options[:preload]}") { |v| options[:preload] = v }
           opts.separator "General Options:"
-          opts.on('-e', 'Stub to keep kicker happy')
-          opts.on('-v', '--version', 'Show Version') do
-            puts Spin::VERSION; exit
-          end
-          opts.on('-h', '--help') do
-            $stderr.puts opts
-            exit
-          end
+          opts.on("-e", "Stub to keep kicker happy")
+          opts.on("-v", "--version", "Show Version") { puts Spin::VERSION; exit }
+          opts.on("-h", "--help") { $stderr.puts opts; exit }
         end
-        options.parse!
+        parser.parse!
 
         subcommand = argv.shift
         case subcommand
-        when 'serve' then Spin.serve(force_rspec, force_testunit, time, push_results, preload)
-        when 'push' then Spin.push(preload, argv)
+        when "serve" then Spin.serve(options)
+        when "push" then Spin.push(argv, options)
         else
-          $stderr.puts options
+          $stderr.puts parser
           exit 1
         end
       end
