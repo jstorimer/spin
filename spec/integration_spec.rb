@@ -1,10 +1,5 @@
 
 describe "Spin" do
-  before do
-    # kill all Threads that might be hanging around
-    Thread.list.each { |thread| thread.exit unless thread == Thread.current }
-  end
-
   around do |example|
     folder = File.expand_path("../tmp", __FILE__)
     `rm -rf #{folder}`
@@ -15,54 +10,9 @@ describe "Spin" do
     `rm -rf #{folder}`
   end
 
-  def root
-    File.expand_path '../..', __FILE__
-  end
-
-  def spin(command, options={})
-    command = spin_command(command)
-    result = `#{command}`
-    raise "FAILED #{command}\n#{result}" if $?.success? == !!options[:fail]
-    result
-  end
-
-  def spin_command(command)
-    "ruby -I #{root}/lib #{root}/bin/spin #{command} 2>&1"
-  end
-
-  def record_serve(output, command)
-    IO.popen(spin_command("serve #{command}")) do |pipe|
-      while str = pipe.readpartial(100)
-        output << str
-      end rescue EOFError
-    end
-  end
-
-  def write(file, content)
-    ensure_folder File.dirname(file)
-    File.open(file, 'w'){|f| f.write content }
-  end
-
-  def read(file)
-    File.read file
-  end
-
-  def delete(file)
-    `rm #{file}`
-  end
-
-  def ensure_folder(folder)
-    `mkdir -p #{folder}` unless File.exist?(folder)
-  end
-
-  def serve_and_push(serve_command, push_commands)
-    serve_output = ""
-    t1 = Thread.new { record_serve(serve_output, serve_command) }
-    sleep 0.1
-    push_output = [*push_commands].map{ |cmd| spin("push #{cmd}") }
-    sleep 0.2
-    t1.kill
-    [serve_output, push_output]
+  after do
+    kill_all_threads
+    kill_all_children
   end
 
   context "with simple setup" do
@@ -230,5 +180,75 @@ describe "Spin" do
         served[/>>.*<</].should == ">>[:real_preload, :before_fork, :after_fork]<<"
       end
     end
+  end
+
+  private
+
+  def root
+    File.expand_path '../..', __FILE__
+  end
+
+  def spin(command, options={})
+    command = spin_command(command)
+    result = `#{command}`
+    raise "FAILED #{command}\n#{result}" if $?.success? == !!options[:fail]
+    result
+  end
+
+  def spin_command(command)
+    "ruby -I #{root}/lib #{root}/bin/spin #{command} 2>&1"
+  end
+
+  def record_serve(output, command)
+    IO.popen(spin_command("serve #{command}")) do |pipe|
+      while str = pipe.readpartial(100)
+        output << str
+      end rescue EOFError
+    end
+  end
+
+  def write(file, content)
+    ensure_folder File.dirname(file)
+    File.open(file, 'w'){|f| f.write content }
+  end
+
+  def read(file)
+    File.read file
+  end
+
+  def delete(file)
+    `rm #{file}`
+  end
+
+  def ensure_folder(folder)
+    `mkdir -p #{folder}` unless File.exist?(folder)
+  end
+
+  def serve_and_push(serve_command, push_commands)
+    serve_output = ""
+    t1 = Thread.new { record_serve(serve_output, serve_command) }
+    sleep 0.1
+    push_output = [*push_commands].map{ |cmd| spin("push #{cmd}") }
+    sleep 0.2
+    t1.kill
+    [serve_output, push_output]
+  end
+
+  def kill_all_threads
+    Thread.list.each { |thread| thread.exit unless thread == Thread.current }
+  end
+
+  def kill_all_children
+    children = child_pids
+    `kill -9 #{children.join(" ")}` unless children.empty?
+  end
+
+  def child_pids
+    pid = Process.pid
+    pipe = IO.popen("ps -ef | grep #{pid}")
+    pipe.readlines.map do |line|
+      parts = line.split(/\s+/)
+      parts[2] if parts[3] == pid.to_s and parts[2] != pipe.pid.to_s
+    end.compact
   end
 end
