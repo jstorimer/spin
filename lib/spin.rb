@@ -101,7 +101,7 @@ module Spin
 
           "#{file_name}:#{line_number}"
         else
-          file_name
+          file_name.to_s
         end
       end.reject(&:empty?).uniq
     end
