@@ -272,7 +272,7 @@ module Spin
         if options[:test_framework] == :rspec
           # We pretend the filepath came in as an argument and duplicate the
           # behaviour of the `rspec` binary.
-          ARGV.push files
+          ARGV.concat files
         else
           # We require the full path of the file here in the child process.
           files.each { |f| require File.expand_path f }
