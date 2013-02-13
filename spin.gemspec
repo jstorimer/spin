@@ -11,4 +11,6 @@ Gem::Specification.new "spin", Spin::VERSION do |s|
 By preloading your Rails environment for testing you don't load the same code over and over and over... Spin works best for an autotest(ish) workflow.}
 
   s.executables   = ['spin']
+  s.files = ["README.md"] + Dir["lib/**/*"] 
+  s.test_files = Dir["spec/**/*"]
 end
