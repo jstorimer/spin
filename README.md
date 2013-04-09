@@ -1,6 +1,8 @@
 Spin
 ====
 
+**Spin isn't being actively maintained right now. [zeus](https://github.com/burke/zeus) uses a similar strategy to boot your app faster and smarter than spin, while offering more useful features. You should try it out.**
+
 Spin speeds up your Rails testing workflow.
 
 By preloading your Rails environment in one process and then using fork(2) for each test run you don't load the same code over and over and over...
