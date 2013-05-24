@@ -32,8 +32,10 @@ module Spin
 
         subcommand = argv.shift
         case subcommand
-        when "serve" then Spin.serve(options)
-        when "push" then Spin.push(argv, options)
+        when "serve", "s"
+          then Spin.serve(options)
+        when "push", "p"
+          then Spin.push(argv, options)
         else
           $stderr.puts parser
           exit 1
