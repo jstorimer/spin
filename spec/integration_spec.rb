@@ -92,6 +92,19 @@ describe "Spin" do
         served.should include "BBB"
         served.should_not include "CCC"
       end
+
+      it "can pass trailing arguments to the spec runner" do
+        write "spec/foo_spec.rb", <<-RUBY
+          describe "x" do
+            it("a"){ puts "AAA" }
+            it("b"){ puts "BBB" }
+            it("c"){ puts "CCC" }
+          end
+        RUBY
+        served, pushed = serve_and_push("", ["spec/foo_spec.rb -- --profile"])
+        served.should include 'Will run with: ["--profile"]'
+        served.should include 'Top 3 slowest examples'
+      end
     end
 
     context "options" do
@@ -138,6 +151,12 @@ describe "Spin" do
       it "can show total execution time" do
         served, pushed = serve_and_push("--time", ["test/foo_test.rb", "test/foo_test.rb"])
         served.should include "Total execution time was 0."
+        pushed.first.should == @default_pushed
+      end
+
+      it "can pass trailing arguments to the test runner" do
+        served, pushed = serve_and_push("", ["test/foo_test.rb -- -n /validates/"])
+        served.should include 'Will run with: ["-n", "/validates/"]'
         pushed.first.should == @default_pushed
       end
     end

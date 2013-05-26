@@ -14,6 +14,7 @@ module Spin
   extend Spin::Hooks
 
   PUSH_FILE_SEPARATOR = '|'
+  ARGS_SEPARATOR = ' -- '
 
   class << self
     def serve(options)
@@ -50,18 +51,20 @@ module Spin
       abort if files_to_load.empty?
 
       puts "Spinning up #{files_to_load.join(" ")}"
-      send_files_to_serve(files_to_load)
+      send_files_to_serve(files_to_load, options[:trailing_pushed_args] || [])
     end
 
     private
 
-    def send_files_to_serve(files_to_load)
+    def send_files_to_serve(files_to_load, trailing_args)
       # This is the other end of the socket that `spin serve` opens. At this point
       # `spin serve` will accept(2) our connection.
       socket = UNIXSocket.open(socket_file)
 
       # We put the filenames on the socket for the server to read and then load.
-      socket.puts files_to_load.join(PUSH_FILE_SEPARATOR)
+      payload = files_to_load.join(PUSH_FILE_SEPARATOR)
+      payload += "#{ARGS_SEPARATOR}#{trailing_args.join(PUSH_FILE_SEPARATOR)}" unless trailing_args.empty?
+      socket.puts payload
 
       while line = socket.readpartial(100)
         break if line[-1,1] == "\0"
@@ -120,6 +123,8 @@ module Spin
       conn = socket.accept
       # This should be a list of relative paths to files.
       files = conn.gets.chomp
+      files, trailing_args = files.split(ARGS_SEPARATOR)
+      options[:trailing_args] = trailing_args.nil? ? [] : trailing_args.split(PUSH_FILE_SEPARATOR)
       files = files.split(PUSH_FILE_SEPARATOR)
 
       # If spin is started with the time flag we will track total execution so
@@ -155,7 +160,7 @@ module Spin
     # TODO test this
     def rerun_last_tests_on_quit(options)
       trap('QUIT') do
-        fork_and_run(@last_files_ran, nil, options)
+        fork_and_run(@last_files_ran, nil, options.merge(trailing_args: @last_trailing_args_used))
         Process.wait
       end
     end
@@ -181,7 +186,7 @@ module Spin
         options[:test_framework] ||= determine_test_framework
 
         # Preload RSpec to save some time on each test run
-        if options[:test_framework]
+        if options[:test_framework] == :rspec
           begin
             require 'rspec/autorun'
 
@@ -266,6 +271,12 @@ module Spin
         puts
         puts "Loading #{files.inspect}"
 
+        trailing_args = options[:trailing_args]
+        puts "Will run with: #{trailing_args}" unless trailing_args.empty?
+
+        # Pass any additional push arguments to the test runner
+        trailing_args.each {|a| ARGV.push a }
+
         # Unfortunately rspec's interface isn't as simple as just requiring the
         # test file that you want to run (suddenly test/unit seems like the less
         # crazy one!).
@@ -279,6 +290,7 @@ module Spin
         end
       end
       @last_files_ran = files
+      @last_trailing_args_used = options[:trailing_args]
     end
 
     def socket_file
