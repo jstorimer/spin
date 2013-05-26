@@ -18,8 +18,8 @@ module Spin
             $LOAD_PATH.concat(dirs.split(File::PATH_SEPARATOR))
           end
 
-          opts.on("--rspec", "Force the selected test framework to RSpec") { options[:test_framework] = :testunit }
-          opts.on("--test-unit", "Force the selected test framework to Test::Unit") { options[:test_framework] = :rspec }
+          opts.on("--rspec", "Force the selected test framework to RSpec") { options[:test_framework] = :rspec }
+          opts.on("--test-unit", "Force the selected test framework to Test::Unit") { options[:test_framework] = :testunit }
           opts.on("-t", "--time", "See total execution time for each test run") { options[:time] = true }
           opts.on("--push-results", "Push test results to the push process") { options[:push_results] = true }
           opts.on("--preload FILE", "Preload this file instead of #{options[:preload]}") { |v| options[:preload] = v }

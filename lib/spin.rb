@@ -186,7 +186,7 @@ module Spin
         options[:test_framework] ||= determine_test_framework
 
         # Preload RSpec to save some time on each test run
-        if options[:test_framework]
+        if options[:test_framework] == :rspec
           begin
             require 'rspec/autorun'
 
