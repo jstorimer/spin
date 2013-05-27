@@ -1,6 +1,8 @@
 Spin
 ====
 
+[![Build Status](https://travis-ci.org/jstorimer/spin.png)](https://travis-ci.org/jstorimer/spin)
+
 **Spin isn't being actively maintained right now. [zeus](https://github.com/burke/zeus) uses a similar strategy to boot your app faster and smarter than spin, while offering more useful features. You should try it out.**
 
 Spin speeds up your Rails testing workflow.
