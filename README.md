@@ -3,8 +3,6 @@ Spin
 
 [![Build Status](https://travis-ci.org/jstorimer/spin.png)](https://travis-ci.org/jstorimer/spin)
 
-**Spin isn't being actively maintained right now. [zeus](https://github.com/burke/zeus) uses a similar strategy to boot your app faster and smarter than spin, while offering more useful features. You should try it out.**
-
 Spin speeds up your Rails testing workflow.
 
 By preloading your Rails environment in one process and then using fork(2) for each test run you don't load the same code over and over and over...
@@ -137,4 +135,4 @@ If Spin isn't scratching your itch then one of these projects might:
 * [Spork](https://github.com/sporkrb/spork)
 * [TestR](https://github.com/sunaku/testr)
 * [Zeus](https://github.com/burke/zeus)
-
+* [Spring](https://github.com/jonleighton/spring)
