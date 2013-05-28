@@ -272,7 +272,7 @@ module Spin
         puts "Loading #{files.inspect}"
 
         trailing_args = options[:trailing_args]
-        puts "Will run with: #{trailing_args}" unless trailing_args.empty?
+        puts "Will run with: #{trailing_args.inspect}" unless trailing_args.empty?
 
 
         # Unfortunately rspec's interface isn't as simple as just requiring the
