@@ -281,7 +281,7 @@ module Spin
         if options[:test_framework] == :rspec
           # We pretend the filepath came in as an argument and duplicate the
           # behaviour of the `rspec` binary.
-          ARGV.concat (files + trailing_args)
+          ARGV.concat(files + trailing_args)
         else
           # Pass any additional push arguments to the test runner
           ARGV.concat trailing_args
