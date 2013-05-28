@@ -274,8 +274,6 @@ module Spin
         trailing_args = options[:trailing_args]
         puts "Will run with: #{trailing_args}" unless trailing_args.empty?
 
-        # Pass any additional push arguments to the test runner
-        trailing_args.each {|a| ARGV.push a }
 
         # Unfortunately rspec's interface isn't as simple as just requiring the
         # test file that you want to run (suddenly test/unit seems like the less
@@ -283,8 +281,10 @@ module Spin
         if options[:test_framework] == :rspec
           # We pretend the filepath came in as an argument and duplicate the
           # behaviour of the `rspec` binary.
-          ARGV.concat files
+          ARGV.concat (files + trailing_args)
         else
+          # Pass any additional push arguments to the test runner
+          ARGV.concat trailing_args
           # We require the full path of the file here in the child process.
           files.each { |f| require File.expand_path f }
         end
