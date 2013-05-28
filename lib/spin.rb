@@ -160,7 +160,7 @@ module Spin
     # TODO test this
     def rerun_last_tests_on_quit(options)
       trap('QUIT') do
-        fork_and_run(@last_files_ran, nil, options.merge(trailing_args: @last_trailing_args_used))
+        fork_and_run(@last_files_ran, nil, options.merge(:trailing_args => @last_trailing_args_used))
         Process.wait
       end
     end
