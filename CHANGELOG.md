@@ -1,3 +1,10 @@
+## Master branch
+
+* kill all children in tests [Michael Grosser]
+* Fix the case where file_name is nil [Tyson Tate]
+* Short aliases for serve and push [Kir Shatrov]
+* Trailing params for Rspec as well [Marek Rosa]
+
 ## Version 0.6.0 (Feb 13, 2013)
 
 * add -v flag to spin and kick off integration testing [Michael Grosser]
