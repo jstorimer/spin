@@ -1,3 +1,26 @@
+## Version 0.6.0 (Feb 13, 2013)
+
+* add -v flag to spin and kick off integration testing [Michael Grosser]
+* Options refactoring, namespaces and more tests [Michael Grosser]
+* Do not create multidimensional ARGVs [☈king]
+
+## Version 0.5.2 (Jul 26, 2012)
+
+* Don't preload rspec/rails [Jonathan del Strother]
+
+## Version 0.5.1 (Jul 26, 2012)
+
+* Do not fail with missing root or missing .spin [Michael Grosser]
+
+## Version 0.5.0 (Jul 24, 2012)
+
+* Allow spin to run from a subdirectory of the project. [Dylan Thacker-Smith]
+* Delete the socket file when spin serve exits. [Dylan Thacker-Smith]
+* Adds ability to specify a line number for the RSpec. [Dmitry Koprov]
+* Add --preload FILE option to preload whatever people want [Michael Grosser]
+* Hooks [Michael Grosser]
+* Make connection tty so we preserve colors [Michael Grosser]
+
 ## Version 0.4.5 (Mar 14, 2012)
 
 * Fix issues with nil values from v0.4.4 release
@@ -12,7 +35,7 @@
 
 ## Version 0.4.2 (Dec 14, 2011)
 
-* Fixes "undefined local variable or method 'conn'" bug [Ben Brinckerhoff 
+* Fixes "undefined local variable or method 'conn'" bug [Ben Brinckerhoff
 
 ## Version 0.4.1 (Dec 13, 2011)
 
