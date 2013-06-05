@@ -22,6 +22,7 @@ module Spin
           opts.on("--test-unit", "Force the selected test framework to Test::Unit") { options[:test_framework] = :testunit }
           opts.on("-t", "--time", "See total execution time for each test run") { options[:time] = true }
           opts.on("--push-results", "Push test results to the push process") { options[:push_results] = true }
+          opts.on("--strip-ansi-color", "Remove ansi color escaping sequences, useful when using --push-results") { options[:strip_ansi_color] = true }
           opts.on("--preload FILE", "Preload this file instead of #{options[:preload]}") { |v| options[:preload] = v }
           opts.separator "General Options:"
           opts.on("-e", "Stub to keep kicker happy")

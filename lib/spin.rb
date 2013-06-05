@@ -51,12 +51,18 @@ module Spin
       abort if files_to_load.empty?
 
       puts "Spinning up #{files_to_load.join(" ")}"
-      send_files_to_serve(files_to_load, options[:trailing_pushed_args] || [])
+
+      #demo for strip ansi color, should not be a fixed value
+      #cli option lost after fork, how to pass during #fork_and_run?
+      options[:strip_ansi_color] = false
+      files_to_load = convert_push_arguments_to_files(argv)
+
+      send_files_to_serve(files_to_load, options[:trailing_pushed_args] || [], options[:strip_ansi_color])
     end
 
     private
 
-    def send_files_to_serve(files_to_load, trailing_args)
+    def send_files_to_serve(files_to_load, trailing_args, strip_ansi_color = false)
       # This is the other end of the socket that `spin serve` opens. At this point
       # `spin serve` will accept(2) our connection.
       socket = UNIXSocket.open(socket_file)
@@ -68,6 +74,9 @@ module Spin
 
       while line = socket.readpartial(100)
         break if line[-1,1] == "\0"
+        if strip_ansi_color
+          line = line.gsub(/\e\[[^m]*m/, '')
+        end
         print line
       end
     rescue Errno::ECONNREFUSED, Errno::ENOENT
