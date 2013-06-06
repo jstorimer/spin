@@ -106,7 +106,7 @@ module Spin
         else
           file_name.to_s
         end
-      end.reject(&:empty?).uniq
+      end.compact.reject(&:empty?).uniq
     end
 
     def make_files_relative(files_to_load, root_path)
