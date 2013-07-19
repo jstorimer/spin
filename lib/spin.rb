@@ -1,5 +1,6 @@
 require 'spin/version'
 require 'spin/hooks'
+require 'spin/test_process'
 require 'spin/logger'
 require 'socket'
 require 'tempfile' # Dir.tmpdir
@@ -137,6 +138,8 @@ module Spin
     def run_pushed_tests(socket, options)
       rerun_last_tests_on_quit(options) unless options[:push_results]
 
+      notify_ready
+
       # Since `spin push` reconnects each time it has new files for us we just
       # need to accept(2) connections from it.
       conn = socket.accept
@@ -156,12 +159,6 @@ module Spin
 
       fork_and_run(files, conn, options)
 
-      # WAIT: We don't want the parent process handling multiple test runs at the same
-      # time because then we'd need to deal with multiple test databases, and
-      # that destroys the idea of being simple to use. So we wait(2) until the
-      # child process has finished running the test.
-      Process.wait
-
       # If we are tracking time we will output it here after everything has
       # finished running
       logger.info "Total execution time was #{Time.now - start} seconds" if start
@@ -178,10 +175,33 @@ module Spin
     # Trap SIGQUIT (Ctrl+\) and re-run the last files that were pushed
     # TODO test this
     def rerun_last_tests_on_quit(options)
-      trap('QUIT') do
-        fork_and_run(@last_files_ran, nil, options.merge(:trailing_args => @last_trailing_args_used))
-        Process.wait
+      trap('QUIT') { sigquit_handler(options) }
+    end
+
+    # This method is called when a SIGQUIT ought to be handled.
+    def sigquit_handler(options)
+      # If the current process is not the Spin server process, ignore the
+      # signal by doing nothing.
+      return unless server_process?
+
+      unless @last_files_ran
+        logger.fatal "Cannot rerun last tests, please push a file to Spin server first"
+        return
       end
+
+      if test_process.alive?
+        logger.fatal "Cannot rerun last tests, test process #{test_process} still alive"
+        return
+      end
+
+      fork_and_run(@last_files_ran, nil, options.merge(:trailing_args => @last_trailing_args_used))
+
+      notify_ready
+    end
+
+    # Notify the user that Spin server is ready for new tests.
+    def notify_ready
+      logger.info "Ready"
     end
 
     def preload(options)
@@ -288,12 +308,17 @@ module Spin
       path
     end
 
+    # Returns (and caches) a TestProcess instance.
+    def test_process
+      @test_process ||= Spin::TestProcess.new
+    end
+
     def fork_and_run(files, conn, options)
       execute_hook(:before_fork)
       # We fork(2) before loading the file so that our pristine preloaded
       # environment is untouched. The child process will load whatever code it
       # needs to, then it exits and we're back to the baseline preloaded app.
-      fork do
+      test_process.pid = fork do
         # To push the test results to the push process instead of having them
         # displayed by the server, we reopen $stdout/$stderr to the open
         # connection.
@@ -332,6 +357,11 @@ module Spin
       end
       @last_files_ran = files
       @last_trailing_args_used = options[:trailing_args]
+
+      # WAIT: We don't want the parent process handling multiple test runs at the same
+      # time because then we'd need to deal with multiple test databases, and
+      # that destroys the idea of being simple to use.
+      test_process.wait
     end
 
     def socket_file
