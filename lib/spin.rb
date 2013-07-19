@@ -1,5 +1,6 @@
 require 'spin/version'
 require 'spin/hooks'
+require 'spin/logger'
 require 'socket'
 require 'tempfile' # Dir.tmpdir
 # This lets us hash the parameters we want to include in the filename
@@ -15,6 +16,8 @@ module Spin
 
   PUSH_FILE_SEPARATOR = '|'
   ARGS_SEPARATOR = ' -- '
+  # The time window used to detect 2 successive SIGINT (Ctrl+C) signals.
+  SIGINT_TIME_WINDOW = 5
 
   class << self
     def serve(options)
@@ -24,18 +27,34 @@ module Spin
         Dir.chdir(root_path)
         Spin.parse_hook_file(root_path)
       else
-        warn "Could not find #{options[:preload]}. Are you running this from the root of a Rails project?"
+        logger.warn "Could not find #{options[:preload]}. Are you running this from the root of a Rails project?"
       end
+
+      set_server_process_pid
 
       open_socket do |socket|
         preload(options) if root_path
 
-        puts "Pushing test results back to push processes" if options[:push_results]
+        logger.info "Pushing test results back to push processes" if options[:push_results]
 
         loop do
           run_pushed_tests(socket, options)
         end
       end
+    end
+
+    def logger
+      @logger ||= Spin::Logger.new
+    end
+
+    # Called by the Spin server process to store its process pid.
+    def set_server_process_pid
+      @server_process_pid = Process.pid
+    end
+
+    # Returns +true+ if the current process is the Spin server process.
+    def server_process?
+      @server_process_pid == Process.pid
     end
 
     def push(argv, options)
@@ -50,7 +69,7 @@ module Spin
 
       abort if files_to_load.empty?
 
-      puts "Spinning up #{files_to_load.join(" ")}"
+      logger.info "Spinning up #{files_to_load.join(" ")}"
       send_files_to_serve(files_to_load, options[:trailing_pushed_args] || [])
     end
 
@@ -145,7 +164,7 @@ module Spin
 
       # If we are tracking time we will output it here after everything has
       # finished running
-      puts "Total execution time was #{Time.now - start} seconds" if start
+      logger.info "Total execution time was #{Time.now - start} seconds" if start
 
       # Tests have now run. If we were pushing results to a push process, we can
       # now disconnect it.
@@ -201,7 +220,7 @@ module Spin
         end
       end
       # This is the amount of time that you'll save on each subsequent test run.
-      puts "Preloaded Rails env in #{duration}s..."
+      logger.info "Preloaded Rails environment in #{duration.round(2)}s"
     end
 
     # This socket is how we communicate with `spin push`.
@@ -213,15 +232,38 @@ module Spin
       File.delete(file) if File.exist?(file)
       socket = UNIXServer.open(file)
 
-      # Trap SIGINT (Ctrl-C) so that we exit cleanly.
-      trap('SIGINT') do
-        socket.close
-        exit
-      end
+      trap('SIGINT') { sigint_handler(socket) }
 
       yield socket
     ensure
       File.delete(file) if file && File.exist?(file)
+    end
+
+    # This method is called when a SIGINT ought to be handled.
+    def sigint_handler(socket)
+      # If the current process is not the Spin server process, allow the signal
+      # to "bubble up" by exiting.
+      exit unless server_process?
+
+      if sigint_recently_sent?
+        socket.close
+        exit
+      else
+        set_last_sigint_sent
+        logger.info "Press Ctrl+C again (within #{SIGINT_TIME_WINDOW}s) to exit"
+      end
+    end
+
+    # Updates the timestamp when the last SIGINT was sent.
+    def set_last_sigint_sent
+      @last_sigint_sent = Time.now
+    end
+
+    # Returns +true+ if a SIGINT has been sent within the time window.
+    def sigint_recently_sent?
+      return if @last_sigint_sent.nil?
+
+      (Time.now - SIGINT_TIME_WINDOW) < @last_sigint_sent
     end
 
     def determine_test_framework
@@ -268,11 +310,10 @@ module Spin
 
         execute_hook(:after_fork)
 
-        puts
-        puts "Loading #{files.inspect}"
+        logger.info "Loading #{files.inspect}"
 
         trailing_args = options[:trailing_args]
-        puts "Will run with: #{trailing_args.inspect}" unless trailing_args.empty?
+        logger.info "Will run with: #{trailing_args.inspect}" unless trailing_args.empty?
 
 
         # Unfortunately rspec's interface isn't as simple as just requiring the
