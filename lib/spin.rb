@@ -16,6 +16,8 @@ module Spin
 
   PUSH_FILE_SEPARATOR = '|'
   ARGS_SEPARATOR = ' -- '
+  # The time window used to detect 2 successive SIGINT (Ctrl+C) signals.
+  SIGINT_TIME_WINDOW = 5
 
   class << self
     def serve(options)
@@ -27,6 +29,8 @@ module Spin
       else
         logger.warn "Could not find #{options[:preload]}. Are you running this from the root of a Rails project?"
       end
+
+      set_server_process_pid
 
       open_socket do |socket|
         preload(options) if root_path
@@ -41,6 +45,16 @@ module Spin
 
     def logger
       @logger ||= Spin::Logger.new
+    end
+
+    # Called by the Spin server process to store its process pid.
+    def set_server_process_pid
+      @server_process_pid = Process.pid
+    end
+
+    # Returns +true+ if the current process is the Spin server process.
+    def server_process?
+      @server_process_pid == Process.pid
     end
 
     def push(argv, options)
@@ -218,15 +232,38 @@ module Spin
       File.delete(file) if File.exist?(file)
       socket = UNIXServer.open(file)
 
-      # Trap SIGINT (Ctrl-C) so that we exit cleanly.
-      trap('SIGINT') do
-        socket.close
-        exit
-      end
+      trap('SIGINT') { sigint_handler(socket) }
 
       yield socket
     ensure
       File.delete(file) if file && File.exist?(file)
+    end
+
+    # This method is called when a SIGINT ought to be handled.
+    def sigint_handler(socket)
+      # If the current process is not the Spin server process, allow the signal
+      # to "bubble up" by exiting.
+      exit unless server_process?
+
+      if sigint_recently_sent?
+        socket.close
+        exit
+      else
+        set_last_sigint_sent
+        logger.info "Press Ctrl+C again (within #{SIGINT_TIME_WINDOW}s) to exit"
+      end
+    end
+
+    # Updates the timestamp when the last SIGINT was sent.
+    def set_last_sigint_sent
+      @last_sigint_sent = Time.now
+    end
+
+    # Returns +true+ if a SIGINT has been sent within the time window.
+    def sigint_recently_sent?
+      return if @last_sigint_sent.nil?
+
+      (Time.now - SIGINT_TIME_WINDOW) < @last_sigint_sent
     end
 
     def determine_test_framework
