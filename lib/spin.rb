@@ -1,5 +1,6 @@
 require 'spin/version'
 require 'spin/hooks'
+require 'spin/logger'
 require 'socket'
 require 'tempfile' # Dir.tmpdir
 # This lets us hash the parameters we want to include in the filename
@@ -24,18 +25,22 @@ module Spin
         Dir.chdir(root_path)
         Spin.parse_hook_file(root_path)
       else
-        warn "Could not find #{options[:preload]}. Are you running this from the root of a Rails project?"
+        logger.warn "Could not find #{options[:preload]}. Are you running this from the root of a Rails project?"
       end
 
       open_socket do |socket|
         preload(options) if root_path
 
-        puts "Pushing test results back to push processes" if options[:push_results]
+        logger.info "Pushing test results back to push processes" if options[:push_results]
 
         loop do
           run_pushed_tests(socket, options)
         end
       end
+    end
+
+    def logger
+      @logger ||= Spin::Logger.new
     end
 
     def push(argv, options)
@@ -50,7 +55,7 @@ module Spin
 
       abort if files_to_load.empty?
 
-      puts "Spinning up #{files_to_load.join(" ")}"
+      logger.info "Spinning up #{files_to_load.join(" ")}"
       send_files_to_serve(files_to_load, options[:trailing_pushed_args] || [])
     end
 
@@ -145,7 +150,7 @@ module Spin
 
       # If we are tracking time we will output it here after everything has
       # finished running
-      puts "Total execution time was #{Time.now - start} seconds" if start
+      logger.info "Total execution time was #{Time.now - start} seconds" if start
 
       # Tests have now run. If we were pushing results to a push process, we can
       # now disconnect it.
@@ -201,7 +206,7 @@ module Spin
         end
       end
       # This is the amount of time that you'll save on each subsequent test run.
-      puts "Preloaded Rails env in #{duration}s..."
+      logger.info "Preloaded Rails environment in #{duration.round(2)}s"
     end
 
     # This socket is how we communicate with `spin push`.
@@ -268,11 +273,10 @@ module Spin
 
         execute_hook(:after_fork)
 
-        puts
-        puts "Loading #{files.inspect}"
+        logger.info "Loading #{files.inspect}"
 
         trailing_args = options[:trailing_args]
-        puts "Will run with: #{trailing_args.inspect}" unless trailing_args.empty?
+        logger.info "Will run with: #{trailing_args.inspect}" unless trailing_args.empty?
 
 
         # Unfortunately rspec's interface isn't as simple as just requiring the
