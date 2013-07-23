@@ -7,3 +7,6 @@ rvm:
 notifications:
   email:
     - shatrov@me.com
+matrix:
+  allow_failures:
+    - rvm: 1.8.7
