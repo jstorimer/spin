@@ -1,9 +1,14 @@
 ## Master branch
 
+## Version 0.7.0 (Jul 23, 2013)
+
 * kill all children in tests [Michael Grosser]
 * Fix the case where file_name is nil [Tyson Tate]
 * Short aliases for serve and push [Kir Shatrov]
 * Trailing params for Rspec as well [Marek Rosa]
+* Prevent multiple test processes from running [Todd Mazierski]
+* Debug via puts replaced with Logger [Todd Mazierski]
+* 2 layers of SIGINT handling to Spin server [Todd Mazierski]
 
 ## Version 0.6.0 (Feb 13, 2013)
 
