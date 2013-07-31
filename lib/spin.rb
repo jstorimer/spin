@@ -35,19 +35,33 @@ module Spin
 
       open_socket do |socket|
         preload(options) if root_path
+        self_read, self_write = IO.pipe
 
         if options[:push_results]
           logger.info "Pushing test results back to push processes"
         else
           # Trap SIGQUIT (Ctrl+\) and re-run the last files that were pushed
-          trap('QUIT') { sigquit_handler(options) }
+          trap('QUIT') { self_write.puts('QUIT') }
         end
         # Trap SIGINT (Ctrl+C) and only quit when double-pressed
-        trap('SIGINT') { sigint_handler(socket) }
+        trap('SIGINT'){ self_write.puts('SIGINT') }
 
         loop do
           notify_ready
-          run_pushed_tests(socket, options)
+
+          readable_io = IO.select([socket, self_read])[0][0]
+          if readable_io == self_read
+            # One of our signal handlers has fired
+            case readable_io.gets.strip
+            when 'QUIT'
+              sigquit_handler(options)
+            when 'SIGINT'
+              sigint_handler(socket)
+            end
+          else
+            # The socket must have had a new test written to it
+            run_pushed_tests(socket, options)
+          end
         end
       end
     end
@@ -193,8 +207,6 @@ module Spin
       end
 
       fork_and_run(@last_files_ran, nil, options.merge(:trailing_args => @last_trailing_args_used))
-
-      notify_ready
     end
 
     # Notify the user that Spin server is ready for new tests.
