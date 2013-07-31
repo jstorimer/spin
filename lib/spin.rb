@@ -36,9 +36,17 @@ module Spin
       open_socket do |socket|
         preload(options) if root_path
 
-        logger.info "Pushing test results back to push processes" if options[:push_results]
+        if options[:push_results]
+          logger.info "Pushing test results back to push processes"
+        else
+          # Trap SIGQUIT (Ctrl+\) and re-run the last files that were pushed
+          trap('QUIT') { sigquit_handler(options) }
+        end
+        # Trap SIGINT (Ctrl+C) and only quit when double-pressed
+        trap('SIGINT') { sigint_handler(socket) }
 
         loop do
+          notify_ready
           run_pushed_tests(socket, options)
         end
       end
@@ -136,10 +144,6 @@ module Spin
     end
 
     def run_pushed_tests(socket, options)
-      rerun_last_tests_on_quit(options) unless options[:push_results]
-
-      notify_ready
-
       # Since `spin push` reconnects each time it has new files for us we just
       # need to accept(2) connections from it.
       conn = socket.accept
@@ -170,12 +174,6 @@ module Spin
       rescue Errno::EPIPE
         # Don't abort if the client already disconnected
       end
-    end
-
-    # Trap SIGQUIT (Ctrl+\) and re-run the last files that were pushed
-    # TODO test this
-    def rerun_last_tests_on_quit(options)
-      trap('QUIT') { sigquit_handler(options) }
     end
 
     # This method is called when a SIGQUIT ought to be handled.
@@ -251,8 +249,6 @@ module Spin
       file = socket_file
       File.delete(file) if File.exist?(file)
       socket = UNIXServer.open(file)
-
-      trap('SIGINT') { sigint_handler(socket) }
 
       yield socket
     ensure
