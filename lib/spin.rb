@@ -1,6 +1,5 @@
 require 'spin/version'
 require 'spin/hooks'
-require 'spin/test_process'
 require 'spin/logger'
 require 'socket'
 require 'tempfile' # Dir.tmpdir
@@ -197,11 +196,6 @@ module Spin
         return
       end
 
-      if test_process.alive?
-        logger.fatal "Cannot rerun last tests, test process #{test_process} still alive"
-        return
-      end
-
       fork_and_run(@last_files_ran, nil, options.merge(:trailing_args => @last_trailing_args_used))
     end
 
@@ -308,17 +302,12 @@ module Spin
       path
     end
 
-    # Returns (and caches) a TestProcess instance.
-    def test_process
-      @test_process ||= Spin::TestProcess.new
-    end
-
     def fork_and_run(files, conn, options)
       execute_hook(:before_fork)
       # We fork(2) before loading the file so that our pristine preloaded
       # environment is untouched. The child process will load whatever code it
       # needs to, then it exits and we're back to the baseline preloaded app.
-      test_process.pid = fork do
+      fork do
         # To push the test results to the push process instead of having them
         # displayed by the server, we reopen $stdout/$stderr to the open
         # connection.
@@ -361,7 +350,7 @@ module Spin
       # WAIT: We don't want the parent process handling multiple test runs at the same
       # time because then we'd need to deal with multiple test databases, and
       # that destroys the idea of being simple to use.
-      test_process.wait
+      Process.wait
     end
 
     def socket_file
