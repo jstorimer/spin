@@ -41,10 +41,10 @@ module Spin
           logger.info "Pushing test results back to push processes"
         else
           # Trap SIGQUIT (Ctrl+\) and re-run the last files that were pushed
-          trap('QUIT') { self_write.puts('QUIT') }
+          trap('QUIT') { self_write.puts("QUIT") if server_process? }
         end
         # Trap SIGINT (Ctrl+C) and only quit when double-pressed
-        trap('SIGINT'){ self_write.puts('SIGINT') }
+        trap('SIGINT'){ self_write.puts('SIGINT') if server_process? }
 
         loop do
           notify_ready
@@ -192,10 +192,6 @@ module Spin
 
     # This method is called when a SIGQUIT ought to be handled.
     def sigquit_handler(options)
-      # If the current process is not the Spin server process, ignore the
-      # signal by doing nothing.
-      return unless server_process?
-
       unless @last_files_ran
         logger.fatal "Cannot rerun last tests, please push a file to Spin server first"
         return
@@ -269,10 +265,6 @@ module Spin
 
     # This method is called when a SIGINT ought to be handled.
     def sigint_handler(socket)
-      # If the current process is not the Spin server process, allow the signal
-      # to "bubble up" by exiting.
-      exit unless server_process?
-
       if sigint_recently_sent?
         socket.close
         exit
