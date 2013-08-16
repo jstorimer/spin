@@ -1,6 +1,5 @@
 require 'spin/version'
 require 'spin/hooks'
-require 'spin/test_process'
 require 'spin/logger'
 require 'socket'
 require 'tempfile' # Dir.tmpdir
@@ -17,8 +16,9 @@ module Spin
 
   PUSH_FILE_SEPARATOR = '|'
   ARGS_SEPARATOR = ' -- '
-  # The time window used to detect 2 successive SIGINT (Ctrl+C) signals.
-  SIGINT_TIME_WINDOW = 5
+  # Messages written to/read from the self-pipe queue.
+  SIGQUIT_MESSAGE = 'SIGQUIT'
+  SIGINT_MESSAGE = 'SIGINT'
 
   class << self
     def serve(options)
@@ -35,13 +35,64 @@ module Spin
 
       open_socket do |socket|
         preload(options) if root_path
+        self_read, self_write = IO.pipe
 
-        logger.info "Pushing test results back to push processes" if options[:push_results]
+        if options[:push_results]
+          logger.info "Pushing test results back to push processes"
+        else
+          trap('SIGQUIT') { sigquit_handler(self_write) }
+        end
+        trap('SIGINT') { sigint_handler(self_write) }
 
         loop do
-          run_pushed_tests(socket, options)
+          readable_io = ready_while do
+            IO.select([socket, self_read])[0][0]
+          end
+
+          if readable_io == self_read
+            # One of our signal handlers has fired
+            case readable_io.gets.strip
+            when SIGQUIT_MESSAGE
+              rerun_last_tests(options)
+            when SIGINT_MESSAGE
+              exit_server(socket)
+            end
+          else
+            # The socket must have had a new test written to it
+            run_pushed_tests(socket, options)
+          end
         end
       end
+    end
+
+    # This method is called when a SIGQUIT ought to be handled.
+    #
+    # Given the self-pipe +queue+, adds a SIGQUIT message to it. Message is
+    # *not* queued if the current process is not the Spin server process (i.e.
+    # it's a test process). Otherwise, more than one message would be added to
+    # the queue when Ctrl+\ is pressed.
+    #
+    def sigquit_handler(queue)
+      return unless server_process?
+
+      queue.puts(SIGQUIT_MESSAGE)
+    end
+
+    # This method is called when a SIGINT ought to be handled.
+    #
+    # Given the self-pipe +queue+, adds a SIGINT message to it. Message is
+    # *not* queued if either of these are true:
+    #
+    #   1. The current process is not the Spin server process (i.e. it's a test
+    #      process). Instead, the signal is "bubbled up" by exiting.
+    #
+    #   2. The Spin server is not ready for a new command.
+    #
+    def sigint_handler(queue)
+      exit unless server_process?
+      return unless ready?
+
+      queue.puts(SIGINT_MESSAGE)
     end
 
     def logger
@@ -136,10 +187,6 @@ module Spin
     end
 
     def run_pushed_tests(socket, options)
-      rerun_last_tests_on_quit(options) unless options[:push_results]
-
-      notify_ready
-
       # Since `spin push` reconnects each time it has new files for us we just
       # need to accept(2) connections from it.
       conn = socket.accept
@@ -172,36 +219,28 @@ module Spin
       end
     end
 
-    # Trap SIGQUIT (Ctrl+\) and re-run the last files that were pushed
-    # TODO test this
-    def rerun_last_tests_on_quit(options)
-      trap('QUIT') { sigquit_handler(options) }
-    end
-
-    # This method is called when a SIGQUIT ought to be handled.
-    def sigquit_handler(options)
-      # If the current process is not the Spin server process, ignore the
-      # signal by doing nothing.
-      return unless server_process?
-
+    # Reruns the last tests that were pushed.
+    def rerun_last_tests(options)
       unless @last_files_ran
         logger.fatal "Cannot rerun last tests, please push a file to Spin server first"
         return
       end
 
-      if test_process.alive?
-        logger.fatal "Cannot rerun last tests, test process #{test_process} still alive"
-        return
-      end
-
       fork_and_run(@last_files_ran, nil, options.merge(:trailing_args => @last_trailing_args_used))
-
-      notify_ready
     end
 
-    # Notify the user that Spin server is ready for new tests.
-    def notify_ready
-      logger.info "Ready"
+    # Changes Spin server's "ready" state to +true+ while the given +block+
+    # executes. Returns the result of the +block+.
+    def ready_while(&block)
+      @ready = true
+      logger.info('Ready')
+      yield.tap { @ready = false }
+    end
+
+    # Returns Spin server's "ready" state. If +true+, this indicates that the
+    # server is available for new tests or commands.
+    def ready?
+      @ready
     end
 
     def preload(options)
@@ -252,38 +291,16 @@ module Spin
       File.delete(file) if File.exist?(file)
       socket = UNIXServer.open(file)
 
-      trap('SIGINT') { sigint_handler(socket) }
-
       yield socket
     ensure
       File.delete(file) if file && File.exist?(file)
     end
 
-    # This method is called when a SIGINT ought to be handled.
-    def sigint_handler(socket)
-      # If the current process is not the Spin server process, allow the signal
-      # to "bubble up" by exiting.
-      exit unless server_process?
-
-      if sigint_recently_sent?
-        socket.close
-        exit
-      else
-        set_last_sigint_sent
-        logger.info "Press Ctrl+C again (within #{SIGINT_TIME_WINDOW}s) to exit"
-      end
-    end
-
-    # Updates the timestamp when the last SIGINT was sent.
-    def set_last_sigint_sent
-      @last_sigint_sent = Time.now
-    end
-
-    # Returns +true+ if a SIGINT has been sent within the time window.
-    def sigint_recently_sent?
-      return if @last_sigint_sent.nil?
-
-      (Time.now - SIGINT_TIME_WINDOW) < @last_sigint_sent
+    # Exits the server process.
+    def exit_server(socket)
+      logger.info "Exiting"
+      socket.close
+      exit
     end
 
     def determine_test_framework
@@ -308,17 +325,12 @@ module Spin
       path
     end
 
-    # Returns (and caches) a TestProcess instance.
-    def test_process
-      @test_process ||= Spin::TestProcess.new
-    end
-
     def fork_and_run(files, conn, options)
       execute_hook(:before_fork)
       # We fork(2) before loading the file so that our pristine preloaded
       # environment is untouched. The child process will load whatever code it
       # needs to, then it exits and we're back to the baseline preloaded app.
-      test_process.pid = fork do
+      fork do
         # To push the test results to the push process instead of having them
         # displayed by the server, we reopen $stdout/$stderr to the open
         # connection.
@@ -361,7 +373,7 @@ module Spin
       # WAIT: We don't want the parent process handling multiple test runs at the same
       # time because then we'd need to deal with multiple test databases, and
       # that destroys the idea of being simple to use.
-      test_process.wait
+      Process.wait
     end
 
     def socket_file
