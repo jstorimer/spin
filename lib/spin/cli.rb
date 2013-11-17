@@ -6,7 +6,7 @@ module Spin
     class << self
       def run(argv)
         options = {
-          :preload => "config/application.rb"
+          :preload => "config/boot.rb"
         }
 
         parser = OptionParser.new do |opts|
