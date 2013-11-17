@@ -9,6 +9,8 @@ module Spin
           :preload => "config/boot.rb"
         }
 
+        options[:preload] = "config/boot.rb"  if ENV['PADRINO_ENV']
+
         parser = OptionParser.new do |opts|
           opts.banner = usage
           opts.separator ""
