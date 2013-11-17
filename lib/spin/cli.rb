@@ -6,7 +6,7 @@ module Spin
     class << self
       def run(argv)
         options = {
-          :preload => "config/boot.rb"
+          :preload => "config/application.rb"
         }
 
         options[:preload] = "config/boot.rb"  if ENV['PADRINO_ENV']
