@@ -1,12 +1,9 @@
 ## Master branch
 
-## Version 0.7.2 (Nov 17, 2013)
-
-* Added Padrino support
-
 ## Version 0.7.1 (Aug 19, 2013)
 
 * fixed capability with MRI 2.0 [Todd Mazierski and Jonathan del Strother]
+* Added Padrino support
 
 ## Version 0.7.0 (Jul 23, 2013)
 
