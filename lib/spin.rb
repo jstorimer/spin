@@ -266,7 +266,7 @@ module Spin
         # Preload RSpec to save some time on each test run
         if options[:test_framework] == :rspec
           begin
-            require 'rspec/autorun'
+            require 'rspec/core'
 
             # Tell RSpec it's running with a tty to allow colored output
             if RSpec.respond_to?(:configure)
@@ -352,14 +352,8 @@ module Spin
         trailing_args = options[:trailing_args]
         logger.info "Will run with: #{trailing_args.inspect}" unless trailing_args.empty?
 
-
-        # Unfortunately rspec's interface isn't as simple as just requiring the
-        # test file that you want to run (suddenly test/unit seems like the less
-        # crazy one!).
         if options[:test_framework] == :rspec
-          # We pretend the filepath came in as an argument and duplicate the
-          # behaviour of the `rspec` binary.
-          ARGV.concat(files + trailing_args)
+          RSpec::Core::Runner.run(files + trailing_args)
         else
           # Pass any additional push arguments to the test runner
           ARGV.concat trailing_args
