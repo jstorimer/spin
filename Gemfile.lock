@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    spin (0.6.0)
+    spin (0.7.1)
 
 GEM
   remote: http://rubygems.org/
