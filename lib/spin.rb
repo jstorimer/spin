@@ -134,7 +134,7 @@ module Spin
       socket = UNIXSocket.open(socket_file)
 
       # We put the filenames on the socket for the server to read and then load.
-      payload = files_to_load.join(PUSH_FILE_SEPARATOR)
+      payload = "push###{files_to_load.join(PUSH_FILE_SEPARATOR)}"
       payload += "#{ARGS_SEPARATOR}#{trailing_args.join(PUSH_FILE_SEPARATOR)}" unless trailing_args.empty?
       socket.puts payload
 
@@ -191,8 +191,10 @@ module Spin
       # Since `spin push` reconnects each time it has new files for us we just
       # need to accept(2) connections from it.
       conn = socket.accept
-      # This should be a list of relative paths to files.
-      files = conn.gets.chomp
+      # The payload is in the form 'command_name##args'
+      # That's why we split on ##.
+      # So args here should be a list of relative paths to files.
+      _, files = conn.gets.chomp.split('##')
       files, trailing_args = files.split(ARGS_SEPARATOR)
       options[:trailing_args] = trailing_args.nil? ? [] : trailing_args.split(PUSH_FILE_SEPARATOR)
       files = files.split(PUSH_FILE_SEPARATOR)
