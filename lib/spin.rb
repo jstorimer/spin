@@ -101,6 +101,7 @@ module Spin
 
     # Called by the Spin server process to store its process pid.
     def set_server_process_pid
+      $0 = 'spin-server'
       @server_process_pid = Process.pid
     end
 
