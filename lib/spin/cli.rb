@@ -6,7 +6,7 @@ module Spin
     class << self
       def run(argv)
         options = {
-          :preload => "config/application.rb"
+          :preload => "config/environment.rb"
         }
 
         parser = OptionParser.new do |opts|
@@ -43,6 +43,8 @@ module Spin
           then Spin.serve(options)
         when "push", "p"
           then Spin.push(argv, options)
+        when "console", "c"
+          then Spin.console
         else
           $stderr.puts parser
           exit 1

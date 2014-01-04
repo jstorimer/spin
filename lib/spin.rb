@@ -59,7 +59,8 @@ module Spin
             end
           else
             # The socket must have had a new test written to it
-            run_pushed_tests(socket, options)
+            # the socket must have received a new command to execute
+            exec_command(socket, options)
           end
         end
       end
@@ -126,6 +127,22 @@ module Spin
       send_files_to_serve(files_to_load, options[:trailing_pushed_args] || [])
     end
 
+    def console
+      logger.info "Firing up a console"
+      socket = UNIXSocket.open(socket_file)
+
+      # We put the filenames on the socket for the server to read and then load.
+      payload = "console##"
+      socket.puts payload
+
+      while line = socket.readpartial(100)
+        break if line[-1,1] == "\0"
+        print line
+      end
+    rescue Errno::ECONNREFUSED, Errno::ENOENT
+      abort "Connection was refused. Have you started up `spin serve` yet?"
+    end
+
     private
 
     def send_files_to_serve(files_to_load, trailing_args)
@@ -134,7 +151,7 @@ module Spin
       socket = UNIXSocket.open(socket_file)
 
       # We put the filenames on the socket for the server to read and then load.
-      payload = files_to_load.join(PUSH_FILE_SEPARATOR)
+      payload = "push###{files_to_load.join(PUSH_FILE_SEPARATOR)}"
       payload += "#{ARGS_SEPARATOR}#{trailing_args.join(PUSH_FILE_SEPARATOR)}" unless trailing_args.empty?
       socket.puts payload
 
@@ -164,12 +181,12 @@ module Spin
 
         # If the file exists then we can push it up just like it is
         file_name = if File.exist?(file_name)
-          file_name
-          # kicker-2.5.0 now gives us file names without extensions, so we have to try adding it
-        elsif File.extname(file_name).empty?
-          full_file_name = [file_name, 'rb'].join('.')
-          full_file_name if File.exist?(full_file_name)
-        end
+                      file_name
+                      # kicker-2.5.0 now gives us file names without extensions, so we have to try adding it
+                    elsif File.extname(file_name).empty?
+                      full_file_name = [file_name, 'rb'].join('.')
+                      full_file_name if File.exist?(full_file_name)
+                    end
 
         if line_number > 0
           abort "You specified a line number. Only one file can be pushed in this case." if files_to_load.length > 1
@@ -187,32 +204,44 @@ module Spin
       end
     end
 
-    def run_pushed_tests(socket, options)
+    def exec_command(socket, options)
       # Since `spin push` reconnects each time it has new files for us we just
       # need to accept(2) connections from it.
       conn = socket.accept
-      # This should be a list of relative paths to files.
-      files = conn.gets.chomp
-      files, trailing_args = files.split(ARGS_SEPARATOR)
-      options[:trailing_args] = trailing_args.nil? ? [] : trailing_args.split(PUSH_FILE_SEPARATOR)
-      files = files.split(PUSH_FILE_SEPARATOR)
+      # The payload is in the form 'command_name##args'
+      # That's why we split on ##.
+      # So args here should be a list of relative paths to files.
+      command, args = conn.gets.chomp.split('##')
 
-      # If spin is started with the time flag we will track total execution so
-      # you can easily compare it with time rspec spec for example
-      start = Time.now if options[:time]
+      case command
+      when 'push'
+        files, trailing_args = args.split(ARGS_SEPARATOR)
+        options[:trailing_args] = trailing_args.nil? ? [] : trailing_args.split(PUSH_FILE_SEPARATOR)
+        files = files.split(PUSH_FILE_SEPARATOR)
 
-      # If we're not sending results back to the push process, we can disconnect
-      # it immediately.
-      disconnect(conn) unless options[:push_results]
+        # If spin is started with the time flag we will track total execution so
+        # you can easily compare it with time rspec spec for example
+        start = Time.now if options[:time]
 
-      fork_and_run(files, conn, options)
+        # If we're not sending results back to the push process, we can disconnect
+        # it immediately.
+        disconnect(conn) unless options[:push_results]
 
-      # If we are tracking time we will output it here after everything has
-      # finished running
-      logger.info "Total execution time was #{Time.now - start} seconds" if start
+        fork_and_run(files, conn, options)
 
-      # Tests have now run. If we were pushing results to a push process, we can
-      # now disconnect it.
+        # If we are tracking time we will output it here after everything has
+        # finished running
+        logger.info "Total execution time was #{Time.now - start} seconds" if start
+
+        # Tests have now run. If we were pushing results to a push process, we can
+        # now disconnect it.
+      when 'console'
+        fork do
+          require 'rails/commands/console'
+          Rails::Console.start(Rails.application)
+        end
+        disconnect(conn)
+      end
       begin
         disconnect(conn) if options[:push_results]
       rescue Errno::EPIPE
