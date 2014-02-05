@@ -3,9 +3,9 @@ Spin
 
 [![Build Status](https://travis-ci.org/jstorimer/spin.png)](https://travis-ci.org/jstorimer/spin)
 
-Spin speeds up your Rails testing workflow.
+Spin speeds up your Rails/Padrino testing workflow.
 
-By preloading your Rails environment in one process and then using fork(2) for each test run you don't load the same code over and over and over...
+By preloading your Rails/Padrino environment in one process and then using fork(2) for each test run you don't load the same code over and over and over...
 Spin works with an autotest(ish) workflow.
 
 Installation
@@ -17,7 +17,7 @@ Spin is available as a rubygem.
 gem i spin
 ```
 
-Spin is a tool for Rails 3 apps. It is compatible with the following testing libraries:
+Spin is a tool for Rails 3/Padrino apps. It is compatible with the following testing libraries:
 
 * any version of test/unit or MiniTest
 * RSpec 2.x
@@ -25,7 +25,7 @@ Spin is a tool for Rails 3 apps. It is compatible with the following testing lib
 Usage
 =====
 
-There are two components to Spin, a server and client. The server has to be running for anything interesting to happen. You can start the Spin server from your `Rails.root` with the following command:
+There are two components to Spin, a server and client. The server has to be running for anything interesting to happen. You can start the Spin server from your root dir with the following command:
 
 ``` bash
 spin serve
@@ -108,7 +108,7 @@ There's another project ([spork](https://github.com/sporkrb/spork)) that aims to
 
 2. It's simple.
 
-    Spin should work out of the box with any Rails app. No custom configuration required.
+    Spin should work out of the box with any Rails/Padrino app. No custom configuration required.
 
 3. It doesn't do any [crazy monkey patching](https://github.com/sporkrb/spork-rails/blob/master/lib/spork/app_framework/rails.rb#L43-80).
 

@@ -23,6 +23,7 @@ module Spin
   class << self
     def serve(options)
       ENV['RAILS_ENV'] = 'test' unless ENV['RAILS_ENV']
+      ENV['PADRINO_ENV'] = 'test' unless ENV['PADRINO_ENV']
 
       if root_path = rails_root(options[:preload])
         Dir.chdir(root_path)
