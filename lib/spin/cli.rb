@@ -3,6 +3,8 @@ require 'optparse'
 
 module Spin
   module CLI
+    SPIN_CONFIG_FILE = ".spin"
+
     class << self
       def run(argv)
         options = {
@@ -35,7 +37,9 @@ module Spin
             options[:trailing_pushed_args] = trailing_pushed_args
           end
         end
-        parser.parse!
+
+        argvs = (parser.default_argv + global_argvs).uniq
+        parser.parse!(argvs)
 
         subcommand = argv.shift
         case subcommand
@@ -57,6 +61,17 @@ module Spin
                  spin push <file> <file>...
           Spin preloads your Rails environment to speed up your autotest(ish) workflow.
         USAGE
+      end
+
+      def global_argvs
+        [Dir.pwd, Dir.home].each do |path|
+          config_path = File.join(path, SPIN_CONFIG_FILE)
+          if File.exists?(config_path)
+            return File.read(config_path).split("\n").compact.reject(&:empty?)
+          end
+        end
+
+        []
       end
     end
   end

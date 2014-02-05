@@ -63,6 +63,19 @@ spin serve -Itest
 
 Send a SIGQUIT to spin serve (`Ctrl+\`) if you want to re-run the last files that were ran via `spin push [files]`.
 
+### With config file
+
+Like in RSpec, Spin automaticly fetches `.spin` file from home and current directories (current dir is prioritized).
+
+For example, if you create `~/.spin` with this content:
+
+```
+--push-results
+--time
+```
+
+These options will be automaticly applied when you start the spin.
+
 ### With Kicker
 
 As mentioned, this tool works best with an autotest(ish) workflow. I haven't actually used with with `autotest` itself, but it works great with [kicker](http://github.com/alloy/kicker). Here's the suggested workflow for a Rails app:
