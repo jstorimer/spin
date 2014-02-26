@@ -118,11 +118,10 @@ module Spin
         Dir.chdir root_path
       end
 
-      files_to_load << "tty?" if $stdout.tty?
-
       abort if files_to_load.empty?
 
       logger.info "Spinning up #{files_to_load.join(" ")}"
+      files_to_load << "tty?" if $stdout.tty?
       send_files_to_serve(files_to_load, options[:trailing_pushed_args] || [])
     end
 
