@@ -52,7 +52,7 @@ module Spin
       private
 
       def usage
-        <<-USAGE.gsub(/^\s{8}/,"")
+        <<-USAGE.gsub(/^\s{10}/,"")
           Usage: spin serve
                  spin push <file> <file>...
           Spin preloads your Rails environment to speed up your autotest(ish) workflow.
